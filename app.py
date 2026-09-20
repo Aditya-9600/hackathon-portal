@@ -348,7 +348,7 @@ elif st.session_state.step == 5:
                             # Log to Google Sheets
                             team = st.session_state.team_data
                             ps_data = PROBLEM_STATEMENTS[st.session_state.selected_ps_id]
-                            comp_summary = "; ".join([f"{k}: {v}" for k, v in st.session_state.final_components.items()])
+                            comp_summary = "\n".join([f"{k}: {v}" for k, v in st.session_state.final_components.items()])
                             
                             row_data = [
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

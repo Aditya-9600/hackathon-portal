@@ -272,7 +272,7 @@ elif st.session_state.step == 4:
                 st.rerun()
 
 # ---------------------------------------------------------
-# SCREEN 5: FINAL CONFIRMATION & RAZORPAY GATEWAY
+# SCREEN 5: FINAL CONFIRMATION & CASHFREE GATEWAY
 # ---------------------------------------------------------
 elif st.session_state.step == 5:
     st.title("Step 5: Review & Registration Fee Payment")
@@ -283,66 +283,85 @@ elif st.session_state.step == 5:
     st.table(final_table)
     
     st.markdown("---")
-    st.subheader("Pay Registration Fee (₹350)")
+    st.subheader("Pay Registration Fee (₹300)")
     
-    # ---> PASTE YOUR RAZORPAY API KEYS HERE <---
-    RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_ID"
-    RAZORPAY_KEY_SECRET = "YOUR_RAZORPAY_KEY_SECRET"
+    # ---> PASTE YOUR CASHFREE TEST KEYS HERE <---
+    CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
+    CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
     
-    rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    # Uses the sandbox (test) environment. Change 'sandbox.cashfree' to 'api.cashfree' when going live.
+    CASHFREE_ENDPOINT = "https://sandbox.cashfree.com/pg/links"
     
-    # Generate a unique Razorpay Payment Link ONLY ONCE per session
-    if "rzp_link_id" not in st.session_state:
+    # Generate a unique Cashfree Payment Link ONLY ONCE per session
+    if "cf_link_id" not in st.session_state:
         with st.spinner("Generating secure payment gateway..."):
             try:
                 txn_ref = f"REG_{int(time.time())}"
-                link_data = {
-                    "amount": 35000, # Razorpay calculates in paise (35000 paise = ₹350)
-                    "currency": "INR",
-                    "description": "Hackathon Registration Fee",
-                    "reference_id": txn_ref,
-                    "customer": {
-                        "name": st.session_state.team_data["leader_name"],
-                        "contact": st.session_state.team_data["leader_phone"]
-                    },
-                    "notes": {
-                        "Problem_Statement": f"PS {st.session_state.selected_ps_id}"
-                    }
-                }
-                # Call Razorpay to generate the link
-                payment_link = rzp_client.payment_link.create(link_data)
                 
-                # Store link details in memory
-                st.session_state.rzp_link_id = payment_link['id']
-                st.session_state.rzp_link_url = payment_link['short_url']
-                st.session_state.txn_ref = txn_ref
+                headers = {
+                    "accept": "application/json",
+                    "content-type": "application/json",
+                    "x-api-version": "2023-08-01",
+                    "x-client-id": CASHFREE_APP_ID,
+                    "x-client-secret": CASHFREE_SECRET_KEY
+                }
+                
+                payload = {
+                    "customer_details": {
+                        "customer_phone": st.session_state.team_data["leader_phone"],
+                        "customer_name": st.session_state.team_data["leader_name"]
+                    },
+                    "link_id": txn_ref,
+                    "link_amount": 300.00,
+                    "link_currency": "INR",
+                    "link_purpose": f"Hackathon PS {st.session_state.selected_ps_id}"
+                }
+                
+                # Call Cashfree to generate the link
+                response = requests.post(CASHFREE_ENDPOINT, json=payload, headers=headers)
+                data = response.json()
+                
+                if response.status_code == 200:
+                    st.session_state.cf_link_id = txn_ref
+                    st.session_state.cf_link_url = data["link_url"]
+                    st.session_state.txn_ref = txn_ref
+                else:
+                    st.error(f"Cashfree API Error: {data.get('message', 'Check your API keys')}")
             except Exception as e:
-                st.error(f"Razorpay API Error: {str(e)}")
+                st.error(f"Error connecting to gateway: {str(e)}")
     
     # Display the Payment Link and Verification UI
-    if "rzp_link_url" in st.session_state:
-        st.write("Scan the QR code below or click the button to pay securely via Razorpay.")
+    if "cf_link_url" in st.session_state:
+        st.write("Scan the QR code below or click the button to pay securely via Cashfree.")
         
         col1, col2 = st.columns([1, 2])
         with col1:
-            # Show Razorpay link as a QR code
-            qr_img = generate_url_qr(st.session_state.rzp_link_url)
+            # Generate QR from Cashfree link
+            qr_img = generate_url_qr(st.session_state.cf_link_url)
             st.image(qr_img, caption=f"Ref: {st.session_state.txn_ref}", width=250)
             
-            # Show as a clickable URL
-            st.markdown(f"[**👉 Click Here to Pay Online**]({st.session_state.rzp_link_url})")
+            st.markdown(f"[**👉 Click Here to Pay Online**]({st.session_state.cf_link_url})")
         
         with col2:
-            st.info("After completing the payment on the Razorpay screen, click the verification button below.")
+            st.info("After completing the payment on the Cashfree screen, click the verification button below.")
             
             # True API Verification
             if st.button("Verify Payment Status"):
-                with st.spinner("Contacting Razorpay servers..."):
+                with st.spinner("Contacting Cashfree servers..."):
                     try:
-                        # Fetch the exact, real-time status of this specific link from Razorpay
-                        link_status = rzp_client.payment_link.fetch(st.session_state.rzp_link_id)
+                        headers = {
+                            "accept": "application/json",
+                            "x-api-version": "2023-08-01",
+                            "x-client-id": CASHFREE_APP_ID,
+                            "x-client-secret": CASHFREE_SECRET_KEY
+                        }
                         
-                        if link_status['status'] == 'paid':
+                        # Fetch the status of this specific link
+                        check_url = f"{CASHFREE_ENDPOINT}/{st.session_state.cf_link_id}"
+                        resp = requests.get(check_url, headers=headers)
+                        status_data = resp.json()
+                        
+                        if resp.status_code == 200 and status_data.get("link_status") == "PAID":
                             st.session_state.payment_verified = True
                             
                             # Log to Google Sheets
@@ -353,7 +372,7 @@ elif st.session_state.step == 5:
                             row_data = [
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                 st.session_state.txn_ref,
-                                "₹350 - VERIFIED",
+                                "₹300 - VERIFIED",
                                 team["leader_name"],
                                 team["leader_phone"],
                                 team["m2_name"],
@@ -374,10 +393,10 @@ elif st.session_state.step == 5:
                                 st.session_state.step = 6
                                 st.rerun()
                             else:
-                                st.error(f"Payment verified by Razorpay, but Google Sheets failed: {msg}")
+                                st.error(f"Payment verified by Cashfree, but Google Sheets failed: {msg}")
                         else:
-                            # Prevents bypassing: Rejects if status is 'created', 'expired', or 'cancelled'
-                            st.error(f"Payment not complete. Current Razorpay status: {link_status['status'].upper()}")
+                            current_status = status_data.get('link_status', 'UNKNOWN')
+                            st.error(f"Payment not complete. Current Cashfree status: {current_status}")
                     except Exception as e:
                         st.error(f"Verification Error: {str(e)}")
 # ---------------------------------------------------------

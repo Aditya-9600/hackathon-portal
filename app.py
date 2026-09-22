@@ -15,7 +15,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom Styling
 st.markdown("""
 <style>
     .main-title { font-size: 2.2rem; font-weight: 800; color: #1E293B; margin-bottom: 0.2rem; }
@@ -27,7 +26,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. PROBLEM STATEMENTS DATABASE (COMPENDIUM v2)
+# 2. PROBLEM STATEMENTS DATABASE
 # ==============================================================================
 PROBLEM_STATEMENTS = [
     # DOMAIN 01: Smart Cities & Urbanization
@@ -255,19 +254,150 @@ PROBLEM_STATEMENTS = [
 ]
 
 # ==============================================================================
-# 3. NAVIGATION TABS
+# 3. NAVIGATION TABS (REORDERED)
 # ==============================================================================
 st.markdown('<div class="main-title">⚡ Hackathon 2026 Registration & Resource Portal</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Explore problem statements, inspect expected components, and complete team registration.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Complete your team registration, explore problem statements, and inspect components.</div>', unsafe_allow_html=True)
 
-tab_explore, tab_components, tab_register = st.tabs([
-    "🔍 1. Problem Statements & Compendium",
-    "📦 2. Expected Components Inspector",
-    "📝 3. Team Registration & Payment"
+ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
+
+# The tabs are now reordered to put Registration first, followed by exploration tabs
+tab_register, tab_explore, tab_components = st.tabs([
+    "📝 1. Team Registration & Payment",
+    "🔍 2. Problem Statements",
+    "📦 3. Component List"
 ])
 
 # ==============================================================================
-# TAB 1: PROBLEM STATEMENTS & COMPENDIUM
+# TAB 1: REGISTRATION & PAYMENT
+# ==============================================================================
+with tab_register:
+    st.write("### Team Registration & Seat Confirmation")
+    st.write("Each team can have up to **5 members**. A minimum of **3 members** is required (Members 4 and 5 are completely optional).")
+    st.info("💳 **Registration Fee: ₹350 per team**")
+
+    with st.form("team_registration_form"):
+        st.subheader("1. Team Profile")
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            team_name = st.text_input("Team Name *", placeholder="e.g. CodeStormers")
+        with col_t2:
+            assigned_ps = st.selectbox("Selected Problem Statement *", ps_titles)
+
+        st.markdown("---")
+        st.subheader("2. Core Members (Compulsory)")
+        
+        st.markdown("**Member 1 (Team Leader)**")
+        col_m1a, col_m1b = st.columns(2)
+        with col_m1a:
+            leader_name = st.text_input("Leader Full Name *", placeholder="Leader Name")
+        with col_m1b:
+            leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
+
+        st.markdown("**Member 2**")
+        m2_name = st.text_input("Member 2 Full Name *", placeholder="Full Name")
+
+        st.markdown("**Member 3**")
+        m3_name = st.text_input("Member 3 Full Name *", placeholder="Full Name")
+
+        st.markdown("---")
+        st.subheader("3. Additional Members (Optional)")
+        st.caption("Leave Member 4 and Member 5 blank if your team consists of 3 members.")
+
+        col_m4a, col_m5a = st.columns(2)
+        with col_m4a:
+            m4_name = st.text_input("Member 4 Full Name (Optional)", placeholder="Leave blank if none")
+        with col_m5a:
+            m5_name = st.text_input("Member 5 Full Name (Optional)", placeholder="Leave blank if none")
+            
+        st.markdown("---")
+        st.subheader("4. Custom Component Requests (Optional)")
+        st.write("Review the **Component List** tab for standard hardware. If your project requires additional or alternative hardware, list it below.")
+        custom_components = st.text_area("Custom Components List", placeholder="e.g., 2x NEMA 17 Stepper Motors, 1x Relay Module...")
+
+        st.markdown("---")
+        submit_btn = st.form_submit_button("Generate Payment QR Code (₹350)")
+
+    # Form Submission and Validation
+    if submit_btn:
+        # Enforce compulsory fields without emails
+        if not team_name.strip():
+            st.error("⚠️ Team Name is required.")
+        elif not leader_name.strip() or not leader_phone.strip():
+            st.error("⚠️ Leader Name and Phone Number are required.")
+        elif not m2_name.strip():
+            st.error("⚠️ Member 2 Name is required.")
+        elif not m3_name.strip():
+            st.error("⚠️ Member 3 Name is required.")
+        else:
+            # Store in session state
+            order_id = f"HACK_{uuid.uuid4().hex[:6].upper()}"
+            st.session_state["registration_record"] = {
+                "order_id": order_id,
+                "team_name": team_name,
+                "ps": assigned_ps,
+                "leader_name": leader_name,
+                "leader_phone": leader_phone,
+                "m2_name": m2_name,
+                "m3_name": m3_name,
+                "m4_name": m4_name if m4_name.strip() else "N/A",
+                "m5_name": m5_name if m5_name.strip() else "N/A",
+                "custom_components": custom_components if custom_components.strip() else "None requested",
+                "amount": 350.00,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            st.success("✅ Team details validated! Proceed with the payment below.")
+
+    # Render Payment Section if registration session exists
+    if "registration_record" in st.session_state:
+        rec = st.session_state["registration_record"]
+        st.markdown("---")
+        st.write("### Payment Checkout")
+
+        col_pay1, col_pay2 = st.columns([1, 1.5])
+        with col_pay1:
+            # Generate UPI QR Code for ₹350
+            upi_id = "9322753587@ptyes"  # Replace with actual UPI ID
+            payee_name = "Hackathon Organizing Team"
+            upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(payee_name)}&am=350.00&cu=INR&tn={rec['order_id']}"
+
+            qr = qrcode.QRCode(version=1, box_size=8, border=3)
+            qr.add_data(upi_string)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="#1E293B", back_color="white")
+
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            st.image(buf.getvalue(), caption="Scan with GPay, PhonePe, or Paytm", width=240)
+
+        with col_pay2:
+            st.markdown(f"""
+            **Order Reference:** `{rec['order_id']}`  
+            **Team Name:** {rec['team_name']}  
+            **Problem Statement:** {rec['ps']}  
+            **Total Payable:** **₹350.00**  
+            
+            **Instructions:**
+            1. Open any UPI application on your mobile device.
+            2. Scan the QR code on the left. The amount is fixed at **₹350**.
+            3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
+            """)
+
+        # UTR Verification Input
+        with st.form("utr_verification_form"):
+            utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
+            submit_utr = st.form_submit_button("Submit Payment Reference")
+
+            if submit_utr:
+                if not utr_input.isdigit() or len(utr_input) != 12:
+                    st.error("❌ Please provide a valid 12-digit numeric UPI UTR number.")
+                else:
+                    st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
+                    st.balloons()
+                    st.info("Your registration status has been set to **Pending Verification**. A confirmation email will be dispatched once our settlement reconciles.")
+
+# ==============================================================================
+# TAB 2: PROBLEM STATEMENTS & COMPENDIUM
 # ==============================================================================
 with tab_explore:
     st.write("### Official Problem Statement Compendium")
@@ -332,14 +462,13 @@ with tab_explore:
                 st.caption("No hardware required for this problem statement (Software Track).")
 
 # ==============================================================================
-# TAB 2: EXPECTED COMPONENTS INSPECTOR
+# TAB 3: COMPONENT LIST (HARDWARE INSPECTOR)
 # ==============================================================================
 with tab_components:
-    st.write("### Expected Components Inspector")
+    st.write("### Expected Component List")
     st.write("Select any problem statement to examine its hardware requirements. For software track problems, no hardware components are required.")
 
     # Dropdown selector
-    ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
     selected_ps_str = st.selectbox("Choose a Problem Statement to inspect:", ps_titles)
     
     # Extract ID
@@ -362,150 +491,10 @@ with tab_components:
         st.markdown('<span class="badge-hw">HARDWARE TRACK</span>', unsafe_allow_html=True)
         st.write("#### Expected components list for this problem statement:")
         
-        # Display components without any mention of college
         for idx, comp in enumerate(ps_data["components"], 1):
             st.markdown(f"- **{idx}.** {comp}")
             
         st.caption("Note: This list represents the expected components required to prototype a functional solution for this problem statement.")
-
-# ==============================================================================
-# TAB 3: REGISTRATION & PAYMENT
-# ==============================================================================
-with tab_register:
-    st.write("### Team Registration & Seat Confirmation")
-    st.write("Each team can have up to **5 members**. A minimum of **3 members** is required (Members 4 and 5 are completely optional).")
-    st.info("💳 **Registration Fee: ₹350 per team**")
-
-    with st.form("team_registration_form"):
-        st.subheader("1. Team Profile")
-        col_t1, col_t2 = st.columns(2)
-        with col_t1:
-            team_name = st.text_input("Team Name *", placeholder="e.g. CodeStormers")
-        with col_t2:
-            assigned_ps = st.selectbox("Selected Problem Statement *", ps_titles)
-
-        st.markdown("---")
-        st.subheader("2. Core Members (Compulsory)")
-        
-        st.markdown("**Member 1 (Team Leader)**")
-        col_m1a, col_m1b, col_m1c = st.columns(3)
-        with col_m1a:
-            leader_name = st.text_input("Leader Full Name *", placeholder="Leader Name")
-        with col_m1b:
-            leader_email = st.text_input("Leader Email *", placeholder="leader@college.edu")
-        with col_m1c:
-            leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
-
-        st.markdown("**Member 2**")
-        col_m2a, col_m2b = st.columns(2)
-        with col_m2a:
-            m2_name = st.text_input("Member 2 Full Name *", placeholder="Full Name")
-        with col_m2b:
-            m2_email = st.text_input("Member 2 Email *", placeholder="member2@college.edu")
-
-        st.markdown("**Member 3**")
-        col_m3a, col_m3b = st.columns(2)
-        with col_m3a:
-            m3_name = st.text_input("Member 3 Full Name *", placeholder="Full Name")
-        with col_m3b:
-            m3_email = st.text_input("Member 3 Email *", placeholder="member3@college.edu")
-
-        st.markdown("---")
-        st.subheader("3. Additional Members (Optional)")
-        st.caption("Leave Member 4 and Member 5 blank if your team consists of 3 members.")
-
-        col_m4a, col_m4b = st.columns(2)
-        with col_m4a:
-            m4_name = st.text_input("Member 4 Full Name (Optional)", placeholder="Leave blank if none")
-        with col_m4b:
-            m4_email = st.text_input("Member 4 Email (Optional)", placeholder="Leave blank if none")
-
-        col_m5a, col_m5b = st.columns(2)
-        with col_m5a:
-            m5_name = st.text_input("Member 5 Full Name (Optional)", placeholder="Leave blank if none")
-        with col_m5b:
-            m5_email = st.text_input("Member 5 Email (Optional)", placeholder="Leave blank if none")
-
-        st.markdown("---")
-        submit_btn = st.form_submit_button("Generate Payment QR Code (₹350)")
-
-    # Form Submission and Validation
-    if submit_btn:
-        # Enforce compulsory fields for Members 1, 2, and 3 only
-        if not team_name.strip():
-            st.error("⚠️ Team Name is required.")
-        elif not leader_name.strip() or not leader_email.strip() or not leader_phone.strip():
-            st.error("⚠️ All Leader details (Name, Email, and Phone) are required.")
-        elif not m2_name.strip() or not m2_email.strip():
-            st.error("⚠️ Member 2 details (Name and Email) are required.")
-        elif not m3_name.strip() or not m3_email.strip():
-            st.error("⚠️ Member 3 details (Name and Email) are required.")
-        else:
-            # Store in session state
-            order_id = f"HACK_{uuid.uuid4().hex[:6].upper()}"
-            st.session_state["registration_record"] = {
-                "order_id": order_id,
-                "team_name": team_name,
-                "ps": assigned_ps,
-                "leader_name": leader_name,
-                "leader_email": leader_email,
-                "leader_phone": leader_phone,
-                "m2_name": m2_name,
-                "m3_name": m3_name,
-                "m4_name": m4_name if m4_name.strip() else "N/A",
-                "m5_name": m5_name if m5_name.strip() else "N/A",
-                "amount": 350.00,
-                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-            st.success("✅ Team details validated! Proceed with the payment below.")
-
-    # Render Payment Section if registration session exists
-    if "registration_record" in st.session_state:
-        rec = st.session_state["registration_record"]
-        st.markdown("---")
-        st.write("### Payment Checkout")
-
-        col_pay1, col_pay2 = st.columns([1, 1.5])
-        with col_pay1:
-            # Generate UPI QR Code for ₹350
-            upi_id = "9322753587@ptyes"  # Replace with actual UPI ID
-            payee_name = "Hackathon Organizing Team"
-            upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(payee_name)}&am=350.00&cu=INR&tn={rec['order_id']}"
-
-            qr = qrcode.QRCode(version=1, box_size=8, border=3)
-            qr.add_data(upi_string)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="#1E293B", back_color="white")
-
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            st.image(buf.getvalue(), caption="Scan with GPay, PhonePe, or Paytm", width=240)
-
-        with col_pay2:
-            st.markdown(f"""
-            **Order Reference:** `{rec['order_id']}`  
-            **Team Name:** {rec['team_name']}  
-            **Problem Statement:** {rec['ps']}  
-            **Total Payable:** **₹350.00**  
-            
-            **Instructions:**
-            1. Open any UPI application on your mobile device.
-            2. Scan the QR code on the left. The amount is fixed at **₹350**.
-            3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
-            """)
-
-        # UTR Verification Input
-        with st.form("utr_verification_form"):
-            utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
-            submit_utr = st.form_submit_button("Submit Payment Reference")
-
-            if submit_utr:
-                if not utr_input.isdigit() or len(utr_input) != 12:
-                    st.error("❌ Please provide a valid 12-digit numeric UPI UTR number.")
-                else:
-                    st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
-                    st.balloons()
-                    st.info("Your registration status has been set to **Pending Verification**. A confirmation email will be dispatched once our settlement reconciles.")
 
 # ==============================================================================
 # FOOTER

@@ -279,19 +279,19 @@ with tab_explore:
 
     # --- Document Preview Section ---
     with st.expander("👁️ Click here to preview the Compendium Document", expanded=False):
-        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statement_Compendium_v2.docx"
+        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statements_Updated.docx"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
         components.iframe(viewer_url, height=600, scrolling=True)
 
     # Document Download Section
     st.write("") 
-    doc_filename = "Problem_Statement_Compendium_v2.docx"
+    doc_filename="Problem_Statements_Updated.docx"
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
             st.download_button(
                 label="⬇️ Download Compendium (.docx)",
                 data=fp,
-                file_name="Problem_Statement_Compendium_v2.docx",
+                file_name="Problem_Statements_Updated.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )

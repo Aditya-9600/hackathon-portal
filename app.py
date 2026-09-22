@@ -1,10 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import qrcode
+import requests  # Added to fix the NameError for the Google Sheets Webhook
 from io import BytesIO
 import urllib.parse
 import uuid
-import requests
 import datetime
 import os
 
@@ -28,7 +28,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. PROBLEM STATEMENTS DATABASE
+# 2. PROBLEM STATEMENTS DATABASE (NO COSTING INCLUDED)
 # ==============================================================================
 PROBLEM_STATEMENTS = [
     # DOMAIN 01: Smart Cities & Urbanization
@@ -279,19 +279,19 @@ with tab_explore:
 
     # --- Document Preview Section ---
     with st.expander("👁️ Click here to preview the Compendium Document", expanded=False):
-        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statements_Updated.docx"
+        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statement_Compendium_v2.docx"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
         components.iframe(viewer_url, height=600, scrolling=True)
 
     # Document Download Section
     st.write("") 
-    doc_filename = "Problem_Statements_Updated.docx"
+    doc_filename = "Problem_Statement_Compendium_v2.docx"
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
             st.download_button(
                 label="⬇️ Download Compendium (.docx)",
                 data=fp,
-                file_name="Problem_Statements_Updated.docx",
+                file_name="Problem_Statement_Compendium_v2.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )
@@ -506,7 +506,6 @@ with tab_register:
             3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
             """)
 
-       # UTR Verification Input
         with st.form("utr_verification_form"):
             utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
             submit_utr = st.form_submit_button("Submit Payment Reference")
@@ -516,28 +515,25 @@ with tab_register:
                     st.error("❌ Please provide a valid 12-digit numeric UPI UTR number.")
                 else:
                     with st.spinner("Saving registration to database..."):
-                        # 1. Prepare data payload
                         payload = rec.copy()
                         payload['utr'] = utr_input
                         
-                        # 2. REPLACE THIS with your deployed Google Apps Script URL
+                        # PASTE YOUR GOOGLE SCRIPT URL HERE:
                         webhook_url = "https://script.google.com/macros/s/AKfycbxx4fNg-wBp33lsutFAFt6uvv4Hzs1UCeo-gkFZ_Uox0BV337iQIagDNBDH8a7qYO80kA/exec"
                         
                         try:
-                            # 3. Send data to Google Sheets
                             res = requests.post(webhook_url, json=payload)
                             
                             if res.status_code == 200:
                                 st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
                                 st.balloons()
-                                st.info("Your registration status is **Pending Verification**. Our automated system will scan for your UTR and confirm your ticket shortly.")
-                                
-                                # Clear the session state so the QR code disappears after successful submission
+                                st.info("Your registration status is **Pending Verification**. We will confirm your ticket shortly.")
                                 del st.session_state["registration_record"]
                             else:
                                 st.error("Database connection failed. Please try submitting your UTR again.")
                         except Exception as e:
                             st.error(f"Network error: Could not reach the database. {e}")
+
 # ==============================================================================
 # FOOTER
 # ==============================================================================

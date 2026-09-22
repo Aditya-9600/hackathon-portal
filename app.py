@@ -505,6 +505,7 @@ with tab_register:
             3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
             """)
 
+       # UTR Verification Input
         with st.form("utr_verification_form"):
             utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
             submit_utr = st.form_submit_button("Submit Payment Reference")
@@ -513,10 +514,29 @@ with tab_register:
                 if not utr_input.isdigit() or len(utr_input) != 12:
                     st.error("❌ Please provide a valid 12-digit numeric UPI UTR number.")
                 else:
-                    st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
-                    st.balloons()
-                    st.info("Your registration status has been set to **Pending Verification**. A confirmation email will be dispatched once our settlement reconciles.")
-
+                    with st.spinner("Saving registration to database..."):
+                        # 1. Prepare data payload
+                        payload = rec.copy()
+                        payload['utr'] = utr_input
+                        
+                        # 2. REPLACE THIS with your deployed Google Apps Script URL
+                        webhook_url = "https://script.google.com/macros/s/AKfycbxx4fNg-wBp33lsutFAFt6uvv4Hzs1UCeo-gkFZ_Uox0BV337iQIagDNBDH8a7qYO80kA/exec"
+                        
+                        try:
+                            # 3. Send data to Google Sheets
+                            res = requests.post(webhook_url, json=payload)
+                            
+                            if res.status_code == 200:
+                                st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
+                                st.balloons()
+                                st.info("Your registration status is **Pending Verification**. Our automated system will scan for your UTR and confirm your ticket shortly.")
+                                
+                                # Clear the session state so the QR code disappears after successful submission
+                                del st.session_state["registration_record"]
+                            else:
+                                st.error("Database connection failed. Please try submitting your UTR again.")
+                        except Exception as e:
+                            st.error(f"Network error: Could not reach the database. {e}")
 # ==============================================================================
 # FOOTER
 # ==============================================================================

@@ -262,7 +262,7 @@ st.markdown('<div class="sub-title">Explore problem statements, inspect componen
 
 ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
-# CORRECT TAB ORDER: 1. Statements, 2. Components, 3. Registration
+# TABS ORDER: 1. Statements, 2. Components, 3. Registration
 tab_explore, tab_components, tab_register = st.tabs([
     "🔍 1. Problem Statements",
     "📦 2. Component List",
@@ -278,16 +278,12 @@ with tab_explore:
 
     # --- Document Preview Section ---
     with st.expander("👁️ Click here to preview the Compendium Document", expanded=False):
-        # We use the raw file URL from your public GitHub repository
         github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statement_Compendium_v2.docx"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
-        
-        # Renders Google Docs Viewer inside your Streamlit app
         components.iframe(viewer_url, height=600, scrolling=True)
-    # --------------------------------------
 
     # Document Download Section
-    st.write("") # small spacing
+    st.write("") 
     doc_filename = "Problem_Statement_Compendium_v2.docx"
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
@@ -302,7 +298,7 @@ with tab_explore:
         st.button(
             label="⬇️ Download Compendium (Unavailable)",
             disabled=True,
-            help=f"File '{doc_filename}' not found in the root directory. Place the document in the repository root to enable downloads.",
+            help=f"File '{doc_filename}' not found. Place the document in the repository root to enable downloads.",
             use_container_width=True
         )
 
@@ -352,7 +348,6 @@ with tab_components:
     # Dropdown selector
     selected_ps_str = st.selectbox("Choose a Problem Statement to inspect:", ps_titles)
     
-    # Extract ID
     selected_ps_id = int(selected_ps_str.split(":")[0].replace("PS #", ""))
     ps_data = next(item for item in PROBLEM_STATEMENTS if item["id"] == selected_ps_id)
 
@@ -420,17 +415,26 @@ with tab_register:
         with col_m5a:
             m5_name = st.text_input("Member 5 Full Name (Optional)", placeholder="Leave blank if none")
             
+        # --- NEW CATEGORIZED HARDWARE SECTION ---
         st.markdown("---")
         st.subheader("4. Custom Component Requests (Optional)")
-        st.write("Review the **Component List** tab for standard hardware. If your project requires additional or alternative hardware, list it below.")
-        custom_components = st.text_area("Custom Components List", placeholder="e.g., 2x NEMA 17 Stepper Motors, 1x Relay Module...")
+        st.write("Review the **Component List** tab for standard hardware. If your project requires additional hardware, request it in the categories below.")
+        
+        cat_col1, cat_col2 = st.columns(2)
+        with cat_col1:
+            cat_boards = st.text_input("Microcontrollers & Boards", placeholder="e.g., ESP32, Arduino Nano")
+            cat_sensors = st.text_input("Sensors & Modules", placeholder="e.g., DHT11, Ultrasonic, GPS")
+            cat_power = st.text_input("Power & Batteries", placeholder="e.g., LiPo, 12V SMPS, TP4056")
+        with cat_col2:
+            cat_motors = st.text_input("Motors, Relays & Actuators", placeholder="e.g., Stepper Motor, 5V Relay")
+            cat_displays = st.text_input("Displays & Indicators", placeholder="e.g., 16x2 LCD, OLED, LEDs")
+            cat_misc = st.text_input("Misc / Passives / Wiring", placeholder="e.g., Breadboard, Jumpers, Resistors")
 
         st.markdown("---")
         submit_btn = st.form_submit_button("Generate Payment QR Code (₹350)")
 
     # Form Submission and Validation
     if submit_btn:
-        # Enforce compulsory fields without emails
         if not team_name.strip():
             st.error("⚠️ Team Name is required.")
         elif not leader_name.strip() or not leader_phone.strip():
@@ -440,7 +444,16 @@ with tab_register:
         elif not m3_name.strip():
             st.error("⚠️ Member 3 Name is required.")
         else:
-            # Store in session state
+            # Consolidate the custom hardware categories into a single formatted string
+            hardware_summary = f"""
+            Boards: {cat_boards.strip() or 'None'}
+            Sensors: {cat_sensors.strip() or 'None'}
+            Power: {cat_power.strip() or 'None'}
+            Motors/Relays: {cat_motors.strip() or 'None'}
+            Displays: {cat_displays.strip() or 'None'}
+            Misc: {cat_misc.strip() or 'None'}
+            """.strip()
+
             order_id = f"HACK_{uuid.uuid4().hex[:6].upper()}"
             st.session_state["registration_record"] = {
                 "order_id": order_id,
@@ -452,7 +465,7 @@ with tab_register:
                 "m3_name": m3_name,
                 "m4_name": m4_name if m4_name.strip() else "N/A",
                 "m5_name": m5_name if m5_name.strip() else "N/A",
-                "custom_components": custom_components if custom_components.strip() else "None requested",
+                "custom_components": hardware_summary,
                 "amount": 350.00,
                 "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
@@ -466,7 +479,6 @@ with tab_register:
 
         col_pay1, col_pay2 = st.columns([1, 1.5])
         with col_pay1:
-            # Generate UPI QR Code for ₹350
             upi_id = "9322753587@ptyes"  # Replace with actual UPI ID
             payee_name = "Hackathon Organizing Team"
             upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(payee_name)}&am=350.00&cu=INR&tn={rec['order_id']}"
@@ -493,7 +505,6 @@ with tab_register:
             3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
             """)
 
-        # UTR Verification Input
         with st.form("utr_verification_form"):
             utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
             submit_utr = st.form_submit_button("Submit Payment Reference")

@@ -1,412 +1,514 @@
 import streamlit as st
 import qrcode
 from io import BytesIO
-from datetime import datetime
-import time
-import requests
-import json
+import urllib.parse
+import uuid
+import datetime
+import os
 
-# ---------------------------------------------------------
-# 1. FULL DATA DEFINITIONS (75 Problem Statements)
-# ---------------------------------------------------------
-PROBLEM_STATEMENTS = {
-    1: {"domain": "Smart Cities & Urbanization", "theme": "Smart Street Environment & Noise Monitoring", "category": "Hardware", "description": "Develop an loT-based system that dynamically controls streetlight brightness based on real-time pedestrian/vehicle activity while continuously monitoring urban noise levels and identifying abnormal noise events and recurring hotspots.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Acoustic Sensor": "MAX9814 Electret Microphone", "Motion Sensing": "HC-SR501 PIR Motion Sensor", "Light Sensing": "LDR Photoresistor Module", "Lighting Actuator": "12V 5W High-Power LED", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS Enclosed", "Voltage Regulator": "LM2596 Step-Down Buck", "Discrete ICs": "IRF520 MOSFET Driver", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "10µF Caps, Jumpers, Terminals"}},
-    2: {"domain": "Smart Cities & Urbanization", "theme": "Automated Pothole Detection", "category": "Hardware", "description": "Develop a system that automatically detects potholes using vision or vibration-based sensing and maps their GPS locations for real-time reporting and city road maintenance.", "components": {"Microcontroller": "ESP32-S3-WROOM-1 DevKit", "Vibration Sensing": "MPU-6050 Accelerometer", "Location Data": "NEO-6M GPS Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 3A SMPS Car Converter", "Data Storage": "MicroSD Module + 16GB Card", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, 10kΩ Resistors"}},
-    3: {"domain": "Smart Cities & Urbanization", "theme": "Urban Flood Monitoring & Early Warning", "category": "Hardware", "description": "Develop a waterproof monitoring system that detects rapidly rising water levels in urban drains and underpasses and provides early warnings before flooding affects roads and citizens.", "components": {"Microcontroller": "ESP32-WROOM-32U", "Water Level": "JSN-SR04T Waterproof Ultrasonic", "Auth/Security": "RC522 RFID Module", "Alert System": "High-Decibel 12V Siren", "Power Supply": "12V 3A Weatherproof SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler & TIP122 Transistor", "Prototyping Base": "400-Point Breadboard & Enclosure", "Passives & Wiring": "Cable Glands, Diodes, Jumpers"}},
-    4: {"domain": "Smart Cities & Urbanization", "theme": "Urban Underground Water Leak", "category": "Hardware", "description": "Develop a system that detects and helps locate underground water-pipe leaks using flow, pressure, and acoustic sensing without requiring excavation.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Acoustic Sensing": "Piezo Contact Sensor + LM358", "Flow Sensing": "YF-S201 Hall-Effect Sensor", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 2A SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "74HC14 Schmitt Trigger", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Resistors, Filter Caps"}},
-    5: {"domain": "Smart Cities & Urbanization", "theme": "Pedestrian Safety & Smart Crosswalk", "category": "Hardware", "description": "Develop a smart crosswalk system that detects waiting pedestrians, dynamically illuminates the crossing, and activates warning signals to alert approaching vehicles.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Pedestrian Detect": "RCWL-0516 Radar + HC-SR501 PIR", "Dynamic Lighting": "WS2812B RGB LED Strip", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 10A 50W Industrial SMPS", "Discrete ICs": "74HCT125 Level Shifter", "Prototyping Base": "830-Tie Breadboard & Terminals", "Passives & Wiring": "470Ω Resistor, 1000µF Cap, Jumpers"}},
-    6: {"domain": "Smart Cities & Urbanization", "theme": "Underground Sewage Gas Safety", "category": "Hardware", "description": "Develop a low-power system that continuously monitors toxic and combustible gases in underground sewage systems and provides warnings when gas concentrations reach dangerous levels.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Toxic Gas Sensor": "MQ-136 H2S Gas Sensor", "Combustible Gas": "MQ-4 Methane Sensor", "Ventilation": "12V 1A DC Blower + Relay", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "PC817 Optocoupler", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Buzzer, Jumpers, LEDs"}},
-    7: {"domain": "Smart Cities & Urbanization", "theme": "Dynamic Digital Traffic Signage", "category": "Hardware", "description": "Develop a connected digital signage system that receives real-time traffic or road-condition data and automatically displays alternative routes or detour instructions.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Matrix Display": "MAX7219 4-in-1 Dot Matrix", "Timekeeping": "DS3231 High-Precision RTC", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 4A SMPS Enclosed", "Discrete ICs": "74HC595 Shift Register", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, 10µF Caps, Resistors"}},
-    8: {"domain": "Smart Cities & Urbanization", "theme": "Smart Waste Management", "category": "Hardware", "description": "Develop an loT-based waste management system that monitors garbage-bin fill levels, detects overflow conditions, and sends alerts for timely collection.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Fill Level Sensor": "HC-SR04 Ultrasonic Sensors", "Tamper/Tilt": "SW-520D Roller Tilt Sensor", "Auth/Security": "RC522 RFID Module", "Actuator": "SG90 Micro Servo", "Power Supply": "5V 2A SMPS Adapter", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, 10kΩ Resistors"}},
-    9: {"domain": "Health Tech Hackathon", "theme": "Elderly Care & Assistive Technology", "category": "Hardware", "description": "Develop a wearable system that detects accidental falls in elderly individuals, provides medication reminders, and automatically sends an SOS alert with location.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Motion Sensing": "MPU-6050 Accelerometer/Gyro", "Location Tracking": "NEO-6M GPS Module", "Cellular Comms": "SIM800L GPRS/GSM Module", "Real-Time Clock": "DS3231 RTC Module", "Haptic Alert": "3V Coin Vibration Motor", "Power Management": "TP4056 1A Li-Ion Charger", "Battery Source": "3.7V 1200mAh Li-Po", "Power Supply": "5V 2A SMPS Module", "Discrete ICs": "2N2222 NPN & AMS1117 LDO", "Prototyping Base": "Mini 170-Tie Breadboard", "Passives & Connectors": "Diodes, Push Button, Resistors"}},
-    10: {"domain": "Health Tech Hackathon", "theme": "Hospital Patient Safety & Monitoring", "category": "Hardware", "description": "Develop a smart monitoring system that continuously detects the remaining level of an IV fluid bag and automatically alerts nursing staff when critically low.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Weight Sensing": "1kg Load Cell + HX711 ADC", "Display": "16x2 LCD with I2C", "Alert Subsystem": "5V Buzzer + Red LED", "Power Supply": "12V 2A SMPS Enclosed", "Step-Down Module": "LM2596S Buck Converter", "Discrete ICs": "HX711 IC & PC817 Optocoupler", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Connectors": "Diodes, Resistors, Jumpers"}},
-    11: {"domain": "Health Tech Hackathon", "theme": "Blood Bank & Medical Inventory Management", "category": "Hardware", "description": "Develop an loT-based system that continuously monitors blood storage temperature, tracks blood bag inventory and expiry information, and generates alerts.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "RFID Subsystem": "RC522 RFID Reader Module", "RFID Transponders": "13.56MHz Mifare Tags (10x)", "Temperature Sensor": "DS18B20 Waterproof Probe", "Display": "20x4 LCD with I2C", "Power Supply": "12V 3A SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "DS18B20 IC & 74HC4050 Buffer", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Connectors": "Resistors, Capacitors, Buzzer"}},
-    12: {"domain": "Health Tech Hackathon", "theme": "Neonatal & Maternal Healthcare", "category": "Hardware", "description": "Develop a smart incubator monitoring and control system that maintains stable temperature and humidity for premature babies.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Climate Sensing": "SHT31 I2C Temp & Humidity", "Surface Sensor": "DS18B20 Skin-Surface Probe", "Heating Actuator": "12V 50W PTC Air Heater", "Air Circulation": "12V Brushless Blower Fan", "Humidity Control": "Ultrasonic Mist Maker", "Driver Module": "IRF520 MOSFET Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596 Buck Converter", "Discrete ICs": "AMS1117 LDO & PC817 Opto", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Connectors": "Resistors, Terminals, Wires"}},
-    13: {"domain": "Health Tech Hackathon", "theme": "Preventive Healthcare & Wellness", "category": "Hardware", "description": "Develop a smart bottle that automatically measures a user's water intake, monitors hydration patterns, and provides personalized reminders.", "components": {"Microcontroller": "ESP32-C3 SuperMini RISC-V", "Water Level Sensor": "Non-Contact Capacitive Level", "Access/User ID": "RC522 RFID Module", "Display / UI": "0.42-inch OLED I2C", "Power Supply": "5V 2A SMPS Adapter", "Battery Subsystem": "TP4056 Charger + 1000mAh LiPo", "Discrete ICs": "AMS1117-3.3V LDO", "Alert Module": "3V Coin Vibration Motor", "Prototyping Base": "Mini 170-Tie Breadboard", "Passives & Wiring": "Resistors, Caps, Pushbutton"}},
-    14: {"domain": "Health Tech Hackathon", "theme": "Al-Based Disease Detection & Medical Diagnostics", "category": "Hardware", "description": "Develop a low-cost digital microscopy system that captures blood-smear images and uses computer vision or Al to identify cells containing abnormalities.", "components": {"Microcontroller": "ESP32-S3-WROOM-1 DevKit", "Optics": "OV5640 5MP Camera Module", "Illumination": "Precision Adjustable LED", "Auth/Security": "RC522 RFID Module", "Focus Actuator": "NEMA 17 Stepper Motor", "Power Supply": "12V 3A Enclosed SMPS", "Voltage Regulator": "LM2596 Buck Converter", "Discrete ICs": "A4988 Driver & AMS1117 LDO", "Prototyping Base": "830-Tie Breadboard & Zero PCB", "Passives & Wiring": "Caps, Limit Switches, Jumpers"}},
-    15: {"domain": "Health Tech Hackathon", "theme": "Digital Healthcare & Organ Transplant Management", "category": "Software", "description": "Develop a secure digital platform that enables hospitals to efficiently match organ donors with eligible recipients while protecting identities.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "RC522 RFID Smart Card Terminal", "Crypto Hardware": "ATECC608A Secure Crypto IC", "Display": "16x2 I2C LCD Display", "Power Supply": "5V 2A SMPS Regulated Adapter", "Discrete ICs": "74HC595 Shift Register", "Prototyping Base": "400-Tie Point Half Breadboard", "Passives & Wiring": "Pullup Resistors, LEDs, Jumpers"}},
-    16: {"domain": "Electric Vehicle Hackathon", "theme": "EV Battery Safety & Thermal", "category": "Hardware", "description": "Develop a low-cost battery monitoring and protection system that detects early signs of thermal runaway and isolates the affected section.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Thermal Probes": "NTC 10k Precision Thermistors", "Gas Detection": "MQ-2 Flammable Gas Sensor", "Fault Isolation": "4-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Discrete ICs": "LM393 Dual Comparator IC", "Voltage Regulator": "LM2596S Buck Converter", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Siren, Resistors, Harness"}},
-    17: {"domain": "Electric Vehicle Hackathon", "theme": "EV Motor Fault Detection & Predictive", "category": "Hardware", "description": "Develop a sensorless motor-monitoring system that analyzes three-phase current signals to detect developing inter-turn winding faults.", "components": {"Microcontroller": "ESP32-WROOM-32", "Phase Monitoring": "ACS712 30A Current Sensors", "Signal Clamping": "LM358 Op-Amp ICs", "Auth/Security": "RC522 RFID Module", "Bench Power": "12V 5A Bench SMPS", "Voltage Regulator": "LM2596 Buck Module", "Display": "0.96-inch I2C OLED Display", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Shielded Wire, Caps, Jumpers"}},
-    18: {"domain": "Electric Vehicle Hackathon", "theme": "EV Charging Infrastructure Monitoring", "category": "Hardware", "description": "Develop a retrofit device that independently verifies whether an EV charging station is actually delivering electrical power and records genuine events.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Power Audit": "PZEM-004T V3.0 AC Meter", "Current Clamp": "SCT-013-000 100A Current Clamp", "Auth/Security": "RC522 RFID Reader", "Power Supply": "12V 2A Enclosed SMPS", "Voltage Regulator": "LM2596 Buck Module", "Display / UI": "0.96-inch I2C OLED", "Prototyping Base": "Breadboard & Terminal Blocks", "Passives & Wiring": "14AWG Wire, Caps, Jumpers"}},
-    19: {"domain": "Electric Vehicle Hackathon", "theme": "Regenerative Braking & Energy Recovery", "category": "Hardware", "description": "Develop an intelligent regenerative-braking controller that dynamically determines the appropriate level of braking and maximizes energy recovery.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensing": "ACS712 30A Bidirectional Sensor", "Power Switching": "IRFB3077 N-MOSFET", "Gate Driver": "TC4427/IR2104 Gate Driver", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596S Buck Converter", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "Breadboard & Power Resistors", "Passives & Wiring": "1000µF Caps, 14AWG Wire"}},
-    20: {"domain": "Electric Vehicle Hackathon", "theme": "EV Traction Control & Vehicle", "category": "Hardware", "description": "Develop an intelligent traction-control system that detects excessive wheel slip and dynamically adjusts motor torque to improve stability.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Speed Sensors": "LM393 Optical Wheel Sensors", "Motor Driver": "L298N Dual H-Bridge Module", "Actuators": "Dual TT DC Geared Motors", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Bench SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "74HC14 Hex Inverting Schmitt", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Caps, Status LEDs"}},
-    21: {"domain": "Electric Vehicle Hackathon", "theme": "Vehicle-to-Grid Energy Management", "category": "Hardware", "description": "Develop a bidirectional EV energy-management system that determines when an EV should charge or supply energy based on grid demand.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Power Monitoring": "INA226 High-Accuracy Monitor", "Load Switching": "2-Channel Power Relay (30A)", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W Enclosed SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Opto & ULN2003 Driver", "Prototyping Base": "Breadboard & Power Terminals", "Passives & Wiring": "12AWG Silicone Wire, Jumpers"}},
-    22: {"domain": "Electric Vehicle Hackathon", "theme": "EV Structural Health & Predictive Maintenance", "category": "Hardware", "description": "Develop an accelerometer-based system for detecting structural fatigue in an EV battery mounting system by identifying resonant-frequency changes.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Vibration Sensing": "ADXL345 3-Axis Accelerometer", "Shock Sensing": "SW-420 Shock Sensor", "Auth/Security": "RC522 RFID Module", "Display": "0.96-inch I2C OLED", "Power Supply": "12V 2A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "LM393 Dual Comparator IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, 10kΩ Resistors"}},
-    23: {"domain": "IoT Hackathon", "theme": "Smart Portable Freezer & Cold-Chain", "category": "Hardware", "description": "Develop an loT-enabled portable thermoelectric freezer that maintains low temperatures while monitoring status and sending alerts.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Cooling Element": "TEC1-12706 Peltier Cooler", "Heat Dissipation": "Heatsink + 12V Cooling Fan", "Thermal Sensing": "DS18B20 Temp Sensor", "Location Data": "NEO-6M GPS Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "IRF3205 N-MOSFET", "Prototyping Base": "Breadboard & Power Terminals", "Passives & Wiring": "High-Gauge Wire, Thermal Paste"}},
-    24: {"domain": "IoT Hackathon", "theme": "Industrial Machine Predictive Maintenance", "category": "Hardware", "description": "Develop an loT-based monitoring system that analyzes motor vibration, temperature, and current to identify abnormal conditions before failure.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Vibration Sensor": "ADXL345 3-Axis Accelerometer", "Thermal Sensing": "MLX90614 Infrared Temp Sensor", "Current Monitor": "ACS712 30A Current Sensor", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Shielded cables, Caps, Jumpers"}},
-    25: {"domain": "IoT Hackathon", "theme": "Smart Grid & Grid Automation", "category": "Hardware", "description": "Develop an loT-based smart-grid monitoring system that continuously monitors voltage, current, frequency, and load conditions.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Voltage Sensor": "ZMPT101B AC Voltage Sensor", "Current Sensor": "SCT-013-000 100A AC Clamp", "Load Shedding": "4-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "ULN2803A Transistor IC", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Diodes, Snubber Caps, 14AWG"}},
-    26: {"domain": "IoT Hackathon", "theme": "Al + IoT for Electrical Systems", "category": "Hardware", "description": "Develop an AloT system that analyzes real-time electrical parameters to identify abnormal patterns and predict equipment failures.", "components": {"Microcontroller": "ESP32-S3 DevKit", "Current Sensor": "ACS712 20A Current Sensors", "Voltage Sensor": "ZMPT101B AC Voltage Sensor", "Thermal Sensor": "DS18B20 Temp Sensors", "Vibration Sensor": "ADXL345 Accelerometer Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "LM358 Dual Op-Amp", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Terminals, Caps"}},
-    27: {"domain": "IoT Hackathon", "theme": "Smart Agriculture & Electrical", "category": "Hardware", "description": "Develop an loT-based agricultural automation system that uses soil moisture and weather data to automatically control irrigation.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Soil Sensing": "Capacitive Soil Moisture V1.2", "Pump Health": "ACS712 30A Current Sensor", "Pump Control": "1-Channel 30A Relay Module", "Water Level": "Capacitive Liquid Level Sensor", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Diodes, Jumpers, Status LEDs"}},
-    28: {"domain": "IoT Hackathon", "theme": "Smart Soil Erosion & Landslide", "category": "Hardware", "description": "Develop a sensor-based IoT warning system that monitors deep-soil moisture and ground tilt to detect conditions indicating potential landslides.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Moisture Sensing": "Capacitive Soil Probes", "Tilt/Motion": "ADXL345 High-Resolution Tilt", "Auth/Security": "RC522 RFID Module", "Warning Siren": "High-Decibel 12V Siren", "Power Supply": "12V 2A Weatherproof SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "TIP122 Transistor IC", "Prototyping Base": "Breadboard & IP65 Enclosure", "Passives & Wiring": "Jumpers, Resistors, Cable Glands"}},
-    29: {"domain": "IoT Hackathon", "theme": "Smart Parcel & Delivery Security", "category": "Hardware", "description": "Develop a smart parcel locker that detects deliveries, monitors unauthorized access, and provides secure OTP/RFID-based access.", "components": {"Microcontroller": "ESP32-WROOM-32U DevKit", "Logic Expander": "Arduino Nano V3", "Auth/Security": "RC522 RFID Reader", "Manual Input": "4x4 Matrix Keypad", "Locking Actuator": "12V Solenoid Door Lock", "Parcel Detection": "VL53L0X Laser Sensor", "Power Supply": "12V 5A 60W SMPS", "Power Control": "2-Channel 5V Relay Module", "Voltage Regulator": "LM2596 Buck Converter", "Discrete ICs": "Bidirectional Level Converter", "Prototyping Base": "Breadboards (x2)", "Passives & Wiring": "Diodes, Reed Switch, Jumpers"}},
-    30: {"domain": "EdTech Hackathon", "theme": "Multilingual Academic Learning", "category": "Software", "description": "Develop a multilingual academic support system that accepts questions in Marathi, Hindi, or English and provides clear explanations.", "components": {"Microcontroller": "ESP32-S3 DevKit", "Audio Input": "INMP441 I2S Microphone", "Audio Output": "MAX98357A I2S Amplifier", "Auth/Security": "RC522 RFID Module", "Speaker": "8Ω 3W Miniature Speaker", "Power Supply": "5V 2A SMPS Power Supply", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Buttons, Jumpers, Filter Caps"}},
-    31: {"domain": "EdTech Hackathon", "theme": "Personalized Educational Resource Recommendation", "category": "Software", "description": "Develop a system that analyzes student interactions to identify learning preferences and recommend educational resources.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "RC522 RFID Reader Module", "User Input": "4-Key Touch Sensor (TTP224)", "Display / UI": "0.96-inch I2C OLED", "Power Supply": "5V 2A SMPS Adapter", "Discrete ICs": "74HC14 Schmitt Trigger IC", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, 10kΩ Resistors"}},
-    32: {"domain": "EdTech Hackathon", "theme": "Interactive Al-Powered Quantum Learning", "category": "Software", "description": "Develop an Al-powered interactive platform that enables users to learn quantum computing and design quantum circuits.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "PN532 NFC/RFID Reader", "Display / UI": "20x4 LCD with I2C", "Access Control": "5V Buzzer & Relay", "Power Supply": "5V 2A SMPS Adapter", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, 4.7kΩ Pullups"}},
-    33: {"domain": "EdTech Hackathon", "theme": "Academic-Industry Collaboration Platform", "category": "Software", "description": "Develop a platform that enables universities and industries to discover suitable partners and initiate collaborations.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "PN532 NFC/RFID Reader", "Display / UI": "20x4 LCD with I2C", "Access Control": "5V Buzzer & Relay", "Power Supply": "5V 2A SMPS Adapter", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Jumpers, LEDs, Pullups"}},
-    34: {"domain": "EdTech Hackathon", "theme": "Offline Low-Vision Reading", "category": "Hardware", "description": "Develop a compact handheld system that recognizes printed educational text and converts it into accessible audio.", "components": {"Microcontroller": "ESP32-S3-WROOM-1 DevKit", "Audio Output": "MAX98357A I2S Amplifier", "Speaker": "Mini 8Ω 2W Speaker", "Auth/Security": "RC522 RFID Module", "Power Source": "TP4056 Charger + 18650 Cell", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Buttons, Caps, Jumpers"}},
-    35: {"domain": "EdTech Hackathon", "theme": "Smart Handwriting Posture & Grip", "category": "Hardware", "description": "Develop a smart pen or wearable that detects incorrect writing posture or grip in real time and provides child-friendly feedback.", "components": {"Microcontroller": "ESP32-C3 SuperMini RISC-V", "Grip Sensing": "Force Sensing Resistor (FSR402)", "Posture Sensing": "MPU-6050 6-Axis Motion", "Haptic Alert": "Mini 3V Vibration Motor", "Auth/Security": "RC522 RFID Module", "Power Source": "TP4056 + 3.7V 300mAh LiPo", "Dock Power": "5V 1A SMPS Dock", "Discrete ICs": "2N2222 NPN Transistor", "Prototyping Base": "Mini 170-Tie Breadboard", "Passives & Wiring": "Resistors, Diodes, Silicone Wire"}},
-    36: {"domain": "EdTech Hackathon", "theme": "Visual Pronunciation Learning", "category": "Hardware", "description": "Develop a device that uses microphone input and a display to provide visual mouth-shape guidance for pronunciation.", "components": {"Microcontroller": "ESP32-S3 DevKit", "Microphone": "MAX9814 Electret Microphone", "Display / UI": "1.8-inch SPI TFT Display", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 2A SMPS Adapter", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Caps, Resistors"}},
-    37: {"domain": "Renewable Energy", "theme": "Solar Energy & Battery Management", "category": "Hardware", "description": "Develop an energy-management controller that monitors solar generation and intelligently schedules battery charging.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensing": "ACS712 30A Current Sensors", "Voltage Sensing": "Voltage Detection Modules", "Power Switching": "IRF3205 N-MOSFET Switches", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A Industrial SMPS", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "IR2104 Gate Driver IC", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Filter Caps, Shunts, 14AWG Wire"}},
-    38: {"domain": "Renewable Energy", "theme": "Power Quality & Harmonic Management", "category": "Hardware", "description": "Develop a real-time power-quality monitoring system that detects and analyzes harmonic components.", "components": {"Microcontroller": "ESP32-WROOM-32", "AC Voltage Sensor": "ZMPT101B AC Voltage Sensor", "AC Current Sensor": "SCT-013-000 100A AC Clamp", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 2A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "LM358 Dual Op-Amp IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Bias Resistors, Caps, Jumpers"}},
-    39: {"domain": "Renewable Energy", "theme": "Solar Microgrid & Black-Start", "category": "Hardware", "description": "Develop a black-start controller that can safely restore a local renewable-energy microgrid after a complete outage.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "AC Line Sensing": "ZMPT101B AC Voltage Sensor", "Load Sensing": "ACS712 20A Current Sensors", "Load Restoration": "4-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A 60W SMPS", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "ULN2803A & PC817 Optocoupler", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Diodes, Snubber Caps, Jumpers"}},
-    40: {"domain": "Renewable Energy", "theme": "Electric Vehicles & Vehicle-to-Grid Technology", "category": "Hardware", "description": "Develop a smart V2G controller that coordinates EV charging and discharging according to grid demand.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensing": "ACS712 30A Bidirectional Sensor", "Comms Interface": "MCP2515 CAN Bus Controller", "Auth/Security": "RC522 RFID Reader", "Power Supply": "12V 10A 120W SMPS", "Power Switching": "IRF3205 MOSFET Switches", "Discrete ICs": "LM393 Dual Comparator", "Voltage Regulator": "LM2596S Buck Module", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Caps, Shunts, 14AWG Wire"}},
-    41: {"domain": "Renewable Energy", "theme": "Urban Renewable Energy", "category": "Hardware", "description": "Develop a small-scale energy-harvesting system that captures low-level wind or mechanical energy from urban activities.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Harvester 1": "Piezoelectric Vibration Discs", "Harvester 2": "Mini 3-Phase AC Wind Dynamo", "Storage Element": "2.7V 10F Supercapacitor", "Power IC": "LTC3588 Harvesting IC", "Auth/Security": "RC522 RFID Module", "Base Station Power": "5V 2A SMPS Power Supply", "Discrete ICs": "1N5819 Schottky Diode Array", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Zener Diodes, Jumpers, Storage Caps"}},
-    42: {"domain": "Renewable Energy", "theme": "Railway Energy Harvesting", "category": "Hardware", "description": "Develop a vibration-energy harvesting system that captures mechanical vibrations produced by railway operations.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Primary Harvester": "Piezoelectric Ceramic Harvester", "Telemetry Sensor": "INA219 I2C Monitor", "Vibration Sensor": "SW-420 Vibration Sensor", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 2A Enclosed SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "DB107 Diode Bridge Rectifier", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Supercapacitors, Resistors, Jumpers"}},
-    43: {"domain": "Renewable Energy", "theme": "Community Microgrid & Energy Sharing", "category": "Hardware", "description": "Develop an intelligent microgrid controller that manages local energy, prioritizes loads, and safely transitions islanded operations.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Energy Metering": "PZEM-004T AC Power Meter", "Load Switching": "2-Channel 5V Relay (30A)", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A 60W SMPS", "Display / UI": "16x2 I2C LCD Display", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "16AWG Wiring, Snubber Caps"}},
-    44: {"domain": "Renewable Energy", "theme": "Wind Energy & Predictive Maintenance", "category": "Hardware", "description": "Develop a wind-turbine condition-monitoring system that analyzes vibration and temperature to identify abnormal operations.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Vibration Sensor": "ADXL345 Accelerometer", "RPM Sensor": "LM393 Optical RPM Sensor", "Thermal Sensor": "DS18B20 Temp Probe", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "74HC14 Schmitt Trigger IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Pull-ups, Status LEDs"}},
-    45: {"domain": "Renewable Energy", "theme": "Regenerative Energy Recovery", "category": "Hardware", "description": "Develop a scaled regenerative-braking system that captures mechanical energy generated during the braking of an elevator.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Generator": "12V High-Torque DC Generator", "Power Sensing": "INA219 I2C Module", "Energy Storage": "Supercapacitor Bank (5.4V 5F)", "Dynamic Switching": "IRFB3077 N-MOSFET", "Auth/Security": "RC522 RFID Module", "Bench Power": "12V 5A SMPS Unit", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "TC4427 Driver & PC817 Opto", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Ceramic Dump Resistors, Jumpers"}},
-    46: {"domain": "Renewable Energy", "theme": "Renewable-Powered EV Charging", "category": "Hardware", "description": "Develop a smart EV charging controller that dynamically schedules charging based on renewable-energy availability.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensing": "ACS712 30A Current Sensor", "Voltage Sensing": "DC 0-25V Detection Module", "Power Relay": "1-Channel 30A Relay", "Auth/Security": "RC522 RFID Module", "Display / UI": "16x2 LCD with I2C", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596S Buck Converter", "Discrete ICs": "ULN2003A & AMS1117 LDO", "Prototyping Base": "Breadboard & Screw Terminals", "Passives & Wiring": "14AWG Cable, Diodes, LEDs"}},
-    47: {"domain": "Renewable Energy", "theme": "Solar PV Predictive Maintenance & Soiling", "category": "Hardware", "description": "Develop a low-cost solar-PV monitoring system that compares expected irradiance with actual output to distinguish shading from dust.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Irradiance Sensor": "BH1750 Digital Lux Sensor", "Power Telemetry": "INA219 DC Power Sensor", "Surface Temp": "DS18B20 Temp Probe", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 2A SMPS", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "LM358 Op-Amp & AMS1117 LDO", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Pull-Up Resistors, Filter Caps"}},
-    48: {"domain": "Renewable Energy", "theme": "Wave Energy Conversion", "category": "Hardware", "description": "Develop an Oscillating Water Column system that converts wave-induced air displacement into electrical energy using an air turbine.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Pressure Sensing": "MPX5010DP Pressure Sensor", "Turbine/Generator": "Mini 12V Air Turbine Generator", "Telemetry Sensor": "INA219 I2C Energy Monitor", "Auth/Security": "RC522 RFID Module", "Bench Power": "12V 3A SMPS Power Supply", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "1N5819 Rectifier & LM324 Op-Amp", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "470µF Smoothing Caps, Terminals"}},
-    49: {"domain": "Renewable Energy", "theme": "Triboelectric Energy Harvesting", "category": "Hardware", "description": "Develop a triboelectric nanogenerator that captures low-amplitude ambient vibrations using contact-separation principles.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "TENG Element": "Copper-PTFE Contact Mechanism", "Vibration Sensor": "ADXL345 Accelerometer", "High-Z Input Amp": "CA3140 Op-Amp IC", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 2A SMPS Power Supply", "Storage Element": "Film Capacitor Bank", "Discrete ICs": "1N4007 Diodes & AMS1117 LDO", "Prototyping Base": "400-Tie Point Half Breadboard", "Passives & Wiring": "High Value Resistors, Probes"}},
-    50: {"domain": "Renewable Energy", "theme": "Biogas Energy & Digester Optimization", "category": "Hardware", "description": "Develop a smart monitoring system for biogas plants that measures parameters like temperature, pH, and gas production.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Methane Sensor": "MQ-4 Methane Sensor", "PH Sensor": "Analog pH Sensor Kit", "Thermal Sensor": "DS18B20 Temp Probe", "Feed Actuator": "12V Micro Solenoid Valve", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS", "Voltage Regulator": "LM2596S Buck Module", "Discrete ICs": "TIP122 Transistor IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Flyback Diodes, Terminals, Jumpers"}},
-    51: {"domain": "Renewable Energy", "theme": "Waste Heat Energy Conversion", "category": "Hardware", "description": "Develop a thermoacoustic energy-conversion system that uses a low-grade thermal gradient to generate electrical output.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Thermal Gradient": "MAX6675 Thermocouple Module", "Acoustic Sensor": "Electret / Piezo Acoustic Sensor", "Thermal Element": "TEC1-12706 Peltier Generator", "Telemetry Sensor": "INA219 Power Monitor", "Auth/Security": "RC522 RFID Module", "Bench Power": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "LM358 Dual Op-Amp IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Ceramic Caps, High-Watt Resistors"}},
-    52: {"domain": "Aerial Systems", "theme": "UAV Safety & Autonomous Landing", "category": "Hardware", "description": "Develop an autonomous emergency-landing system that monitors UAV health, identifies a landing zone, and guides safe landing.", "components": {"Microcontroller": "ESP32-S3-DevKitC-1", "Flight Dynamics": "MPU-6050 6-DOF IMU", "Altitude Sensor": "BMP280 Barometric Pressure", "Deployment Actuator": "MG996R Metal Gear Servo", "Auth/Security": "RC522 RFID Module", "Ground Power": "12V 5A Bench SMPS", "Flight Power": "TP4056 + 3.7V 800mAh LiPo", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "Mini 170-Tie Point Breadboard", "Passives & Wiring": "5V Buzzer, LED, Jumpers"}},
-    53: {"domain": "Aerial Systems", "theme": "Autonomous Navigation & Collision", "category": "Hardware", "description": "Develop an autonomous obstacle-detection and path-planning system that enables a UAV to detect obstacles and modify its trajectory.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Primary Sensing": "VL53L0X Time-of-Flight Sensor", "Secondary Sensing": "HC-SR04 Ultrasonic Sensors", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Bench SMPS", "Voltage Regulator": "LM2596 Buck Converter", "Discrete ICs": "74HC14 & Level Converter", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "I2C Pullup Resistors, Caps"}},
-    54: {"domain": "Aerial Systems", "theme": "Energy-Efficient UAV Operations", "category": "Hardware", "description": "Develop an energy-aware UAV mission-planning system that monitors battery status to optimize flight routes.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Power Telemetry": "INA219 I2C Current Sensor", "Auth/Security": "RC522 RFID Module", "Ground Power": "12V 5A Industrial Bench SMPS", "Voltage Regulator": "LM2596 Buck Converter", "Display / UI": "0.96-inch OLED I2C", "Discrete ICs": "AMS1117-3.3V LDO", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Power Shunts, Filter Caps"}},
-    55: {"domain": "Aerial Systems", "theme": "Aircraft Electrical Systems & Fault", "category": "Hardware", "description": "Develop an aircraft electrical fault-management system that monitors voltage, current, and isolates faulty sections.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensors": "ACS712 20A Current Sensors", "Voltage Sensors": "ZMPT101B Voltage Sensors", "Fault Isolation": "4-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Discrete ICs": "ULN2803A & LM358 Op-Amp", "Voltage Regulator": "LM2596S Buck Module", "Prototyping Base": "Breadboard & Terminal Blocks"}},
-    56: {"domain": "Aerial Systems", "theme": "Autonomous Search & Rescue", "category": "Hardware", "description": "Develop an autonomous search-and-rescue drone system capable of systematically scanning a designated area to locate targets.", "components": {"Microcontroller": "ESP32-S3-WROOM-1 DevKit", "Positioning": "NEO-6M GPS Module", "Auth/Security": "RC522 RFID Module", "Ground Power": "12V 3A SMPS Base Station", "UAV Power": "LM2596 Buck Module", "Alert Beacon": "5V Alarm Siren + 3W LED", "Discrete ICs": "TIP122 Transistor IC", "Prototyping Base": "Mini Solderless Breadboard", "Passives & Wiring": "Resistors, Diodes, Jumpers"}},
-    57: {"domain": "Aerial Systems", "theme": "Aviation Safety & Bird Strike Prevention", "category": "Hardware", "description": "Develop a bird-detection and collision-risk assessment system that tracks movement and generates avoidance responses.", "components": {"Microcontroller": "ESP32-S3 DevKit", "Proximity Sensing": "HC-SR04 Waterproof Sensors", "Auth/Security": "RC522 RFID Module", "Ground Power": "12V 3A SMPS Unit", "Acoustic Driver": "PAM8403 3W Amplifier + Horn", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "2N2222 NPN Transistors", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Audio Caps, Jumpers, Pins"}},
-    58: {"domain": "Aerial Systems", "theme": "Satellite Fault Detection & Recovery", "category": "Hardware", "description": "Develop an autonomous satellite fault-management system that identifies abnormal behavior and initiates recovery procedures.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Power Telemetry": "INA219 Voltage/Current Sensor", "Thermal Sensing": "LM35 Precision Temp Sensor", "Auth/Security": "RC522 RFID Module", "Ground Power": "5V 3A Regulated SMPS", "Discrete ICs": "CD4051 8-Channel Multiplexer", "Display / UI": "0.96-inch OLED Screen", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Resistors, LEDs"}},
-    59: {"domain": "Aerial Systems", "theme": "Spacecraft Power Management", "category": "Hardware", "description": "Develop an intelligent satellite power-management system that prioritizes loads to maintain essential operations.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Power Monitors": "INA226 Power Monitor ICs", "Load Switching": "IRF540N N-Channel MOSFETs", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596S Buck Converter", "Discrete ICs": "LM358 Op-Amp & PC817 Opto", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "16AWG Wiring, Resistors"}},
-    60: {"domain": "Aerial Systems", "theme": "Space Safety & Debris Collision", "category": "Software", "description": "Develop a system that tracks simulated space-debris trajectories and calculates collision risk and avoidance maneuvers.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 2A SMPS Adapter", "Display / UI": "0.96-inch I2C OLED", "Discrete ICs": "74HC595 Shift Register IC", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Pushbuttons, LEDs, Jumpers"}},
-    61: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "Wireless Network Security", "category": "Hardware", "description": "Develop a low-cost Wi-Fi security system that detects abnormal deauthentication activity and rogue access points.", "components": {"Microcontroller": "ESP32-WROOM-32U DevKit", "Power Supply": "5V 2A SMPS Adapter", "Display / UI": "0.96-inch I2C OLED", "Alert Module": "5V Active Piezo Buzzer", "Storage/Logging": "MicroSD Adapter + 16GB Card", "Discrete ICs": "AMS1117-3.3V LDO IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Connectors": "Resistors, Caps, LEDs, Jumpers"}},
-    62: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "USB Security & Hardware-Based Cybersecurity", "category": "Hardware", "description": "Develop an inline USB security device that identifies malicious USB devices and prevents access.", "components": {"Microcontroller": "ESP32-S3-DevKitC-1", "USB Host Handler": "MAX3421E USB Host Controller", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 2A SMPS Adapter", "Hardware Protection": "TPD4E001 ESD Diode IC", "Display / UI": "0.96-inch OLED Display", "Alert Module": "5V Active Piezo Buzzer", "Prototyping Base": "Breadboard + Breakout Boards", "Passives & Wiring": "Data Resistors, Jumpers"}},
-    63: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "Digital Forensics & Evidence Analysis", "category": "Software", "description": "Develop an automated forensic software tool that extracts file metadata and reconstructs activity timelines.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Timekeeping": "DS3231 RTC Module", "Data Logging": "MicroSD Adapter + 16GB Card", "Auth/Security": "RC522 RFID Module", "Power Supply": "5V 2A SMPS Adapter", "Display": "0.96-inch I2C OLED", "Discrete ICs": "74HC4050 Hex Buffer IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Tactile Buttons, Jumpers"}},
-    64: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "Forensic Evidence Protection", "category": "Hardware", "description": "Develop a hardware write-blocking device that prevents write operations to digital storage media during acquisition.", "components": {"Microcontroller": "ESP32-S3-DevKitC-1", "USB Interface": "MAX3421E USB Host Shield", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS Dual-Rail", "Voltage Regulator": "LM2596S Buck Converter", "Discrete ICs": "TPS2051 Power Switch IC", "Display / UI": "16x2 I2C LCD + Buzzer", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Shunt Resistors, LEDs, Jumpers"}},
-    65: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "Cyber Incident Response & Digital Evidence", "category": "Software", "description": "Develop a tamper-evident system that links security alerts with digital evidence and maintains an immutable chain-of-custody.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Auth/Security": "RC522 RFID + Tokens", "Crypto & Time": "DS3231 RTC + ATECC608A IC", "Power Supply": "5V 2A SMPS Adapter", "Display / UI": "0.96-inch I2C OLED", "Discrete ICs": "74HC595 Shift Register IC", "Prototyping Base": "400-Tie Point Breadboard", "Passives & Wiring": "Pushbuttons, LEDs, Jumpers"}},
-    66: {"domain": "Cybersecurity & Digital Forensics Domain", "theme": "Secure Digital Forensics & Field Investigation", "category": "Hardware", "description": "Develop an access-controlled forensic acquisition system that protects digital storage from physical and digital modification.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Locking Actuator": "12V Solenoid Cabinet Lock", "Auth/Security": "RC522 RFID Module", "Tamper Sensors": "SW-420 Tamper Tilt Sensor", "Power Supply": "12V 3A SMPS Enclosed", "Voltage Regulator": "LM2596 Buck Converter", "Discrete ICs": "ULN2003 Driver & Diodes", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Reed Switch, Jumpers"}},
-    67: {"domain": "Smart Agriculture & AgriTech", "theme": "Water Management & Smart Irrigation", "category": "Hardware", "description": "Develop a smart irrigation system that monitors field conditions and controls water supply accordingly to prevent waste.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Soil Sensing": "Capacitive Soil Moisture V1.2", "Water Actuator": "12V DC Solenoid Water Valve", "Valve Driver": "1-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A 60W SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "1N4007 Silicon Diodes", "Prototyping Base": "Breadboard & Barrier Terminals", "Passives & Wiring": "Jumpers, LEDs, 18AWG Wire"}},
-    68: {"domain": "Smart Agriculture & AgriTech", "theme": "Precision Agriculture - Crop Health Monitoring", "category": "Hardware", "description": "Develop a UAV-based system using imaging and Al to monitor crop health and identify affected areas.", "components": {"Microcontroller": "ESP32-S3-WROOM-1 DevKit", "Climate Sensing": "DHT22 Temp & Humidity", "Auth/Security": "RC522 RFID Module", "Data Storage": "MicroSD Module + 16GB Card", "Display / UI": "0.96-inch I2C OLED Screen", "Power Supply": "12V 3A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "AMS1117-3.3V LDO IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Jumpers, Resistors, Caps"}},
-    69: {"domain": "Smart Agriculture & AgriTech", "theme": "Precision Agriculture - Smart Fertilization", "category": "Hardware", "description": "Develop a variable-rate fertilizer spraying system that adjusts fertilizer application according to specific field requirements.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Nutrient Proxy": "Analog Optical Turbidity Sensor", "Dosing Actuator": "12V Peristaltic Pump", "Pump Driver": "L298N Dual Motor Driver", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "830-Tie Point Breadboard", "Passives & Wiring": "Silicone Tubing, Diodes, Jumpers"}},
-    70: {"domain": "Smart Agriculture & AgriTech", "theme": "Energy Management & Predictive Maintenance", "category": "Hardware", "description": "Develop a system that monitors agricultural pump health to prevent faults due to overheating or overloading.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Current Sensing": "ACS712 30A Current Sensor", "Thermal Sensing": "DS18B20 Motor Temp Probe", "Vibration Sensing": "SW-420 Vibration Sensor", "Power Control": "1-Channel 30A Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Industrial SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "TIP122 Transistor IC", "Prototyping Base": "Breadboard & Terminal Blocks", "Passives & Wiring": "Jumpers, LEDs, AC Wire"}},
-    71: {"domain": "Smart Agriculture & AgriTech", "theme": "Climate Resilience & Crop Protection", "category": "Hardware", "description": "Develop a system that predicts frost conditions and automatically activates crop-protection mechanisms.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Climate Sensing": "SHT31 Temp & Humidity", "Barometric Data": "BMP280 Barometric Sensor", "Actuator Control": "12V 2-Channel Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A Enclosed SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler IC", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Flyback Diodes, 18AWG Wire"}},
-    72: {"domain": "Smart Agriculture & AgriTech", "theme": "Soil Health Monitoring (Edge Al)", "category": "Hardware", "description": "Develop an edge-Al system that analyzes soil parameters locally and provides soil-health information.", "components": {"Microcontroller": "ESP32-S3 DevKit", "PH Sensing": "Analog Soil pH Sensor", "Salinity/EC": "Analog Soil EC Probe", "Moisture Sensing": "Capacitive Soil Moisture", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 3A SMPS Power Supply", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "LM358 Dual Op-Amp IC", "Prototyping Base": "Breadboard & 0.96-inch OLED", "Passives & Wiring": "Jumpers, Trimpots, Caps"}},
-    73: {"domain": "Smart Agriculture & AgriTech", "theme": "Aquaculture & Water Quality Management", "category": "Hardware", "description": "Develop an automated system that monitors water parameters and controls equipment to prevent sudden dangerous changes.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "PH Sensing": "Analog Industrial pH Sensor", "Thermal Sensing": "DS18B20 Water Temp Probe", "Quality Proxy": "Analog Optical Turbidity", "Actuator Relays": "4-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler ICs", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Resistors, Waterproof Glands"}},
-    74: {"domain": "Smart Agriculture & AgriTech", "theme": "Smart Greenhouse & Environmental Monitoring", "category": "Hardware", "description": "Develop an loT-based system for real-time monitoring and automated environmental control in a greenhouse.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Climate Sensing": "DHT22 Temp & Humidity", "Light Sensing": "BH1750 Ambient Light Sensor", "Soil Sensing": "Capacitive Soil Moisture", "Climate Actuators": "2-Channel 5V Relay Module", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 5A 60W SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "TIP122 Transistor IC", "Prototyping Base": "Breadboard & Terminal Blocks", "Passives & Wiring": "Diodes, Jumpers, LEDs"}},
-    75: {"domain": "Smart Agriculture & AgriTech", "theme": "Post-Harvest Management & Energy Optimization", "category": "Hardware", "description": "Develop a smart drying system that monitors drying conditions and optimizes heater and fan operation.", "components": {"Microcontroller": "ESP32-WROOM-32 Dev Board", "Drying Sensors": "SHT31 Temp & Humidity Sensor", "Spoilage Sensor": "MQ-135 Air Quality Sensor", "Energy Monitor": "ACS712 20A Current Sensor", "Actuator Control": "2-Channel High-Power Relay", "Auth/Security": "RC522 RFID Module", "Power Supply": "12V 10A 120W SMPS", "Voltage Regulator": "LM2596 Buck Module", "Discrete ICs": "PC817 Optocoupler ICs", "Prototyping Base": "Breadboard & Terminals", "Passives & Wiring": "Silicone Wire, Snubber Caps"}}
-}
+# ==============================================================================
+# 1. PAGE SETUP & STYLING
+# ==============================================================================
+st.set_page_config(
+    page_title="Hackathon 2026 Portal",
+    page_icon="⚡",
+    layout="wide"
+)
 
-# ---------------------------------------------------------
-# 2. HELPER FUNCTIONS: WEBHOOK & UPI QR
-# ---------------------------------------------------------
-def append_to_sheet(data_row):
-    """Sends data directly to the Google Sheet using a Web App URL."""
-    try:
-        # ---> PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE <---
-        WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxRdLwG1d2iuadfsicKzk12QSuPn7dHTtFi5_PFu3diEjQY0BRGTrxLojXcYoq6YhmiQQ/exec" 
-        
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post(WEBHOOK_URL, data=json.dumps(data_row), headers=headers)
-        
-        if response.status_code == 200:
-            return True, "Success"
-        else:
-            return False, f"Server returned status: {response.status_code}"
-    except Exception as e:
-        return False, str(e)
+# Custom Styling
+st.markdown("""
+<style>
+    .main-title { font-size: 2.2rem; font-weight: 800; color: #1E293B; margin-bottom: 0.2rem; }
+    .sub-title { font-size: 1.05rem; color: #64748B; margin-bottom: 1.5rem; }
+    .badge-hw { background-color: #DCFCE7; color: #15803D; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .badge-sw { background-color: #E0E7FF; color: #4338CA; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .card-box { padding: 1.2rem; border-radius: 10px; background-color: #F8FAFC; border: 1px solid #E2E8F0; margin-bottom: 1rem; }
+</style>
+""", unsafe_allow_html=True)
 
-import razorpay
+# ==============================================================================
+# 2. PROBLEM STATEMENTS DATABASE (COMPENDIUM v2)
+# ==============================================================================
+PROBLEM_STATEMENTS = [
+    # DOMAIN 01: Smart Cities & Urbanization
+    {"id": 1, "domain": "Smart Cities & Urbanization", "title": "Smart Street Environment & Noise Monitoring", "category": "HARDWARE",
+     "desc": "Develop an IoT-based system that dynamically controls streetlight brightness based on real-time pedestrian/vehicle activity while continuously monitoring urban noise levels.",
+     "components": ["ESP32-WROOM-32 Dev Board", "MAX9814 Electret Mic Module with AGC", "LDR Photoresistor Module", "IRF520 MOSFET Driver Module", "12V LED Spotlight / Strip", "LM2596 Buck Converter"]},
+    {"id": 2, "domain": "Smart Cities & Urbanization", "title": "Urban Flood Monitoring & Early Warning", "category": "HARDWARE",
+     "desc": "Develop a waterproof monitoring system that detects rapidly rising water levels in urban drains and underpasses and provides early warnings.",
+     "components": ["ESP32-WROOM-32 Dev Board", "JSN-SR04T Waterproof Ultrasonic Level Sensor", "High-Decibel 12V Siren Module", "SIM800L GPRS/GSM Module", "12V 2A SMPS Power Supply"]},
+    {"id": 3, "domain": "Smart Cities & Urbanization", "title": "Urban Underground Water Leak Detection", "category": "HARDWARE",
+     "desc": "Develop a system that detects and helps locate underground water-pipe leaks using flow, pressure, and acoustic sensing without excavation.",
+     "components": ["ESP32 DevKit", "YF-S201 Hall-Effect Water Flow Sensor", "MPX5010DP Pressure Sensor", "Piezoelectric Acoustic Contact Sensor + LM358 PreAmp", "OLED Display 0.96-inch"]},
+    {"id": 4, "domain": "Smart Cities & Urbanization", "title": "Underground Sewage Gas Safety", "category": "HARDWARE",
+     "desc": "Develop a low-power system that continuously monitors toxic and combustible gases in underground sewage systems and provides warnings.",
+     "components": ["ESP32 DevKit", "MQ-136 H2S Gas Sensor Module", "MQ-4 Methane Sensor Module", "5V Loud Active Buzzer", "16x2 I2C Character LCD"]},
+    {"id": 5, "domain": "Smart Cities & Urbanization", "title": "Dynamic Digital Traffic Signage", "category": "HARDWARE",
+     "desc": "Develop a connected digital signage system that receives real-time traffic data and automatically displays alternative routes or detour instructions.",
+     "components": ["ESP32-S3 DevKit", "MAX7219 4-in-1 Dot Matrix LED Display Module", "NEO-6M GPS Module", "5V 4A SMPS Power Supply"]},
+    {"id": 6, "domain": "Smart Cities & Urbanization", "title": "Smart Waste Management", "category": "HARDWARE",
+     "desc": "Develop an IoT-based waste management system that monitors garbage-bin fill levels, detects overflow conditions, and sends alerts.",
+     "components": ["ESP32 DevKit", "HC-SR04 Ultrasonic Distance Sensor", "SW-520D Tilt/Overflow Sensor", "SG90 Micro Servo Motor", "TP4056 Battery Charger + Li-ion Cell"]},
+    {"id": 7, "domain": "Smart Cities & Urbanization", "title": "AI-Powered Traffic Flow Optimization", "category": "SOFTWARE",
+     "desc": "Develop a centralized software platform that ingests real-time transit and ride-sharing GPS data to dynamically adjust traffic light timings.",
+     "components": []},
+    {"id": 8, "domain": "Smart Cities & Urbanization", "title": "Civic Issue Crowdsourcing & Triage", "category": "SOFTWARE",
+     "desc": "Develop a web/mobile application that allows citizens to report civic issues with geotagged photos, using AI to route to municipal departments.",
+     "components": []},
 
-def generate_url_qr(url):
-    """Generates a QR code for a standard web URL (like a Razorpay link)."""
-    qr = qrcode.QRCode(version=1, box_size=8, border=2)
-    qr.add_data(url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+    # DOMAIN 02: Healthcare & Medical Technology
+    {"id": 9, "domain": "Healthcare & Medical Technology", "title": "Elderly Care & Assistive Technology", "category": "HARDWARE",
+     "desc": "Develop a wearable system that detects accidental falls in elderly individuals, provides medication reminders, and sends SOS alerts with GPS location.",
+     "components": ["ESP32-C3 SuperMini RISC-V Dev Board", "MPU-6050 6-DOF IMU Sensor", "NEO-6M GPS Module", "Mini 3V Coin Vibration Motor", "3.7V 800mAh LiPo Cell + TP4056"]},
+    {"id": 10, "domain": "Healthcare & Medical Technology", "title": "Hospital Patient Safety & Monitoring", "category": "HARDWARE",
+     "desc": "Develop a smart monitoring system that continuously detects the remaining level of an IV fluid bag and automatically alerts nursing staff.",
+     "components": ["ESP32 Dev Board", "1kg Straight Bar Load Cell + HX711 24-bit ADC Module", "Non-Contact Capacitive Liquid Level Sensor", "0.96-inch I2C OLED Display"]},
+    {"id": 11, "domain": "Healthcare & Medical Technology", "title": "Blood Bank & Medical Inventory Management", "category": "HARDWARE",
+     "desc": "Develop an IoT-based system that continuously monitors blood storage temperature and tracks blood bag inventory/expiry information.",
+     "components": ["ESP32 DevKit", "DS18B20 Waterproof Stainless Digital Temperature Probe", "RC522 13.56MHz RFID Reader + Mifare Tags", "16x2 I2C Character LCD"]},
+    {"id": 12, "domain": "Healthcare & Medical Technology", "title": "Neonatal & Maternal Healthcare", "category": "HARDWARE",
+     "desc": "Develop a smart incubator monitoring and control system that maintains stable temperature and humidity for premature babies.",
+     "components": ["ESP32 Dev Board", "SHT31 High-Precision Temp & Humidity Sensor", "12V 50W PTC Ceramic Heating Element", "12V DC Blower Fan", "2-Channel 5V Optocoupled Relay Module"]},
+    {"id": 13, "domain": "Healthcare & Medical Technology", "title": "Preventive Healthcare & Wellness", "category": "HARDWARE",
+     "desc": "Develop a smart bottle that automatically measures water intake, monitors hydration patterns, and provides personalized reminders.",
+     "components": ["Arduino Nano / ESP32-C3", "Non-Contact Capacitive Liquid Level Sensor", "0.42-inch OLED I2C Display Module", "Coin Vibration Motor", "TP4056 Charger + LiPo"]},
+    {"id": 14, "domain": "Healthcare & Medical Technology", "title": "AI-Based Disease Detection & Medical Diagnostics", "category": "HARDWARE",
+     "desc": "Develop a low-cost digital microscopy system that captures blood-smear images and uses computer vision to highlight malaria/dengue cells.",
+     "components": ["ESP32-S3 DevKit with OV2640 / OV5640 Camera", "Precision Adjustable LED Spotlight Condenser", "MicroSD Card Module + 16GB Card", "A4988 Stepper Driver + NEMA 17 Motor"]},
+    {"id": 15, "domain": "Healthcare & Medical Technology", "title": "Digital Healthcare & Organ Transplant Management", "category": "SOFTWARE",
+     "desc": "Develop a secure platform that enables hospitals to efficiently match organ donors with eligible recipients based on compatibility factors.",
+     "components": []},
+    {"id": 16, "domain": "Healthcare & Medical Technology", "title": "Predictive Hospital Bed Management", "category": "SOFTWARE",
+     "desc": "Develop a software solution integrating with EHR to forecast patient admission rates and discharge times using machine learning.",
+     "components": []},
 
-# ---------------------------------------------------------
-# 3. STATE MANAGEMENT INITIALIZATION
-# ---------------------------------------------------------
-if "step" not in st.session_state:
-    st.session_state.step = 1
-if "team_data" not in st.session_state:
-    st.session_state.team_data = {}
-if "selected_ps_id" not in st.session_state:
-    st.session_state.selected_ps_id = 1
-if "final_components" not in st.session_state:
-    st.session_state.final_components = {}
-if "custom_mode" not in st.session_state:
-    st.session_state.custom_mode = False
-if "payment_verified" not in st.session_state:
-    st.session_state.payment_verified = False
+    # DOMAIN 03: Electric Vehicles (EV) & Mobility
+    {"id": 17, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Battery Safety & Thermal Runaway Detection", "category": "HARDWARE",
+     "desc": "Develop a low-cost battery monitoring system that detects early signs of thermal runaway at the cell level and isolates the affected module.",
+     "components": ["ESP32 Dev Board", "NTC 10k Precision Thermistors (Pack of 5 Cell Probes)", "IRFB3077 High Current Power MOSFET", "1-Channel 30A High-Current Relay", "Active Piezo Buzzer"]},
+    {"id": 18, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Motor Fault Detection & Predictive Maintenance", "category": "HARDWARE",
+     "desc": "Develop a sensorless motor-monitoring system analyzing three-phase current signals to detect developing inter-turn winding faults.",
+     "components": ["ESP32 DevKit", "LM358 Operational Amplifier Signal Conditioning IC", "LM393 Optical Wheel Speed Sensor Module", "74HC14 Schmitt Trigger IC"]},
+    {"id": 19, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Charging Infrastructure Monitoring", "category": "HARDWARE",
+     "desc": "Develop a retrofit device that independently verifies whether an EV charging station is delivering power and logs genuine charging events.",
+     "components": ["ESP32 DevKit", "MCP2515 CAN Bus Controller SPI Module + TJA1050", "RC522 13.56MHz RFID Reader", "MicroSD Card Module + 16GB Card"]},
+    {"id": 20, "domain": "Electric Vehicles (EV) & Mobility", "title": "Regenerative Braking & Energy Recovery", "category": "HARDWARE",
+     "desc": "Develop an intelligent regenerative-braking controller that dynamically manages regen levels based on motor status and battery state.",
+     "components": ["Arduino Nano / ESP32", "IRFB3077/IRF3205 N-MOSFET", "Supercapacitor Bank (5.4V 5F)", "1N5822 3A Schottky Flyback Diodes", "Ceramic Power Dump Resistors (10Ω 10W)"]},
+    {"id": 21, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Traction Control & Vehicle Stability", "category": "HARDWARE",
+     "desc": "Develop an intelligent traction-control system that detects excessive wheel slip and dynamically adjusts motor torque.",
+     "components": ["ESP32 Dev Board", "MPU-6050 6-Axis Accelerometer/Gyro", "Dual TT DC Geared Motors with Encoders", "L298N Dual Motor Driver Module", "2WD Robot Chassis Kit"]},
+    {"id": 22, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Structural Health & Predictive Maintenance", "category": "HARDWARE",
+     "desc": "Develop an accelerometer-based system for detecting structural fatigue in an EV battery mounting system by analyzing resonant frequency.",
+     "components": ["ESP32 DevKit", "ADXL345 High-Speed 3-Axis Digital Accelerometer", "SW-420 High Sensitivity Vibration Sensor", "MicroSD Card Module + 16GB Card"]},
+    {"id": 23, "domain": "Electric Vehicles (EV) & Mobility", "title": "Smart EV Fleet Routing & Charging", "category": "SOFTWARE",
+     "desc": "Develop a cloud-based software platform for commercial EV fleets calculating optimal delivery routes factoring in SOC and charging stations.",
+     "components": []},
+    {"id": 24, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Battery Degradation Analytics", "category": "SOFTWARE",
+     "desc": "Develop a machine learning application analyzing historical charging/usage data to predict long-term battery degradation and advise charging habits.",
+     "components": []},
 
-# ---------------------------------------------------------
-# SCREEN 1: TEAM REGISTRATION DETAILS
-# ---------------------------------------------------------
-if st.session_state.step == 1:
-    st.title("Step 1: Team Registration")
-    st.write("Please enter details for all 5 team members. Only the Team Leader and one alternate member provide phone contacts.")
-    
-    with st.form("team_form"):
-        st.subheader("Leader & Contact Details")
-        leader_name = st.text_input("Team Leader Name (Member 1)*")
-        leader_phone = st.text_input("Team Leader Contact Number (10 Digits)*")
-        
-        st.subheader("Member 2 (Alternate Contact)")
-        m2_name = st.text_input("Member 2 Name*")
-        m2_phone = st.text_input("Alternate Contact Number (10 Digits)*")
-        
-        st.subheader("Remaining Members (Names Only)")
-        m3_name = st.text_input("Member 3 Name*")
-        m4_name = st.text_input("Member 4 Name*")
-        m5_name = st.text_input("Member 5 Name*")
-        
-        submitted = st.form_submit_button("Proceed to Problem Statements")
-        
-        if submitted:
-            if not (leader_name and leader_phone and m2_name and m2_phone and m3_name and m4_name and m5_name):
-                st.error("Please fill in all member names and required contact numbers.")
-            elif len(leader_phone) < 10 or len(m2_phone) < 10:
-                st.error("Please provide valid 10-digit contact numbers.")
-            else:
-                st.session_state.team_data = {
-                    "leader_name": leader_name,
-                    "leader_phone": leader_phone,
-                    "m2_name": m2_name,
-                    "m2_phone": m2_phone,
-                    "m3_name": m3_name,
-                    "m4_name": m4_name,
-                    "m5_name": m5_name
-                }
-                st.session_state.step = 2
-                st.rerun()
+    # DOMAIN 04: Education & Academic Learning
+    {"id": 25, "domain": "Education & Academic Learning", "title": "Multilingual Academic Learning Support", "category": "SOFTWARE",
+     "desc": "Develop a multilingual academic platform that accepts questions in Marathi, Hindi, or English and provides clear explanations suited to student levels.",
+     "components": []},
+    {"id": 26, "domain": "Education & Academic Learning", "title": "Personalized Educational Resource Recommendation", "category": "SOFTWARE",
+     "desc": "Develop an adaptive system analyzing student interactions (quiz time, retry behavior) to identify learning gaps and recommend personalized resources.",
+     "components": []},
+    {"id": 27, "domain": "Education & Academic Learning", "title": "Interactive AI-Powered Quantum Learning", "category": "SOFTWARE",
+     "desc": "Develop an interactive educational platform enabling students to design quantum circuits, visualize quantum states, and receive AI-based optimization guidance.",
+     "components": []},
+    {"id": 28, "domain": "Education & Academic Learning", "title": "Academic–Industry Collaboration Platform", "category": "SOFTWARE",
+     "desc": "Develop a platform connecting universities and industries to initiate and manage industrial visits, projects, internships, and research partnerships.",
+     "components": []},
+    {"id": 29, "domain": "Education & Academic Learning", "title": "Smart Handwriting Posture & Grip Assistant", "category": "HARDWARE",
+     "desc": "Develop a smart pen or wearable that detects incorrect writing posture or pencil grip in real time and provides child-friendly tactile feedback.",
+     "components": ["Mini 170-Tie Point Breadboard (Wearable size)", "FSR402 Force Sensing Resistors", "ADXL345 3-Axis Accelerometer", "Miniature 3V Coin Vibration Motor", "3.7V 300mAh LiPo + TP4056"]},
+    {"id": 30, "domain": "Education & Academic Learning", "title": "Visual Pronunciation Learning Device", "category": "HARDWARE",
+     "desc": "Develop a standalone device that uses microphone input and a small display to provide visual mouth-shape feedback to improve pronunciation.",
+     "components": ["ESP32-S3 DevKit (16MB Flash, 8MB PSRAM)", "MAX9814 Microphone with AGC", "1.8-inch SPI ST7735 Full-Color TFT Display", "PAM8403 3W Audio Amplifier + Speaker"]},
+    {"id": 31, "domain": "Education & Academic Learning", "title": "AI-Driven Academic Integrity Detector", "category": "SOFTWARE",
+     "desc": "Develop a natural language processing software tool that analyzes student submissions to differentiate human writing, plagiarized text, and AI text.",
+     "components": []},
 
-# ---------------------------------------------------------
-# SCREEN 2: 75 PROBLEM STATEMENTS SELECTION
-# ---------------------------------------------------------
-elif st.session_state.step == 2:
-    st.title("Step 2: Select a Problem Statement")
-    
-    ps_options = {ps_id: f"PS {ps_id}: {data['theme']} ({data['domain']})" 
-                  for ps_id, data in PROBLEM_STATEMENTS.items()}
-    
-    selected_id = st.selectbox(
-        "Browse and choose from the 75 problem statements:",
-        options=list(ps_options.keys()),
-        format_func=lambda x: ps_options[x]
-    )
-    
-    if st.button("View Problem Statement Details"):
-        st.session_state.selected_ps_id = selected_id
-        st.session_state.step = 3
-        st.rerun()
+    # DOMAIN 05: Renewable Energy & Power Systems
+    {"id": 32, "domain": "Renewable Energy & Power Systems", "title": "Solar Energy & Battery Management", "category": "HARDWARE",
+     "desc": "Develop an energy-management controller that monitors solar generation and load demand, intelligently scheduling battery cycles.",
+     "components": ["ESP32 DevKit", "6V 3W Mini Solar Panel", "TP4056 Battery Charger + 18650 Cell", "LM2596 Buck Converter", "ACS712 Current Sensor / Shunts", "2-Channel 5V Relay Module"]},
+    {"id": 33, "domain": "Renewable Energy & Power Systems", "title": "Power Quality & Harmonic Management", "category": "HARDWARE",
+     "desc": "Develop a real-time power-quality monitoring system detecting harmonic distortions and evaluating the impact of active compensation.",
+     "components": ["ESP32 Dev Board", "LM358 Operational Amplifier Signal Conditioning IC", "AC/DC Non-Linear Load Simulator", "14AWG Wire & High-Voltage Diodes"]},
+    {"id": 34, "domain": "Renewable Energy & Power Systems", "title": "Solar Microgrid & Black-Start Controller", "category": "HARDWARE",
+     "desc": "Develop a black-start controller that safely restores a renewable-energy microgrid after a complete blackout by sequencing loads.",
+     "components": ["ESP32 DevKit", "4-Channel 5V Relay Module (Step-Load Sequencing)", "12V 5A Industrial SMPS Supply", "12V DC Motor Simulator", "PC817 Optocoupler ICs"]},
+    {"id": 35, "domain": "Renewable Energy & Power Systems", "title": "Electric Vehicles & Vehicle-to-Grid (V2G) Tech", "category": "HARDWARE",
+     "desc": "Develop a smart V2G controller that coordinates EV power feed back into the grid based on peak demand while maintaining minimum battery availability.",
+     "components": ["ESP32 Dev Board", "IRFB3077 High Current N-MOSFET", "MCP2515 CAN Bus Controller Module", "12V Solenoid Interlock", "PC817 Optocoupler ICs"]},
+    {"id": 36, "domain": "Renewable Energy & Power Systems", "title": "Urban Renewable Energy Harvesting", "category": "HARDWARE",
+     "desc": "Develop a small-scale energy harvesting system capturing low-level wind or footfall kinetic energy and converting it into electrical storage.",
+     "components": ["Piezoelectric Ceramic Energy Harvester Module", "LTC3588 Energy Harvesting Power Supply Module", "2.7V 10F Supercapacitor", "Mini 3-Phase AC Wind Dynamo"]},
+    {"id": 37, "domain": "Renewable Energy & Power Systems", "title": "Railway Energy Harvesting", "category": "HARDWARE",
+     "desc": "Develop a vibration-energy harvesting system capturing mechanical track vibrations from train transit for self-powered track monitors.",
+     "components": ["Piezoelectric Vibration Transducer Discs", "Custom Copper-PTFE Triboelectric Contact Plate", "1N5819 Schottky Diode Bridge Rectifier", "Supercapacitor 2.7V 10F", "ESP32-C3 SuperMini"]},
+    {"id": 38, "domain": "Renewable Energy & Power Systems", "title": "Community Microgrid & Energy Sharing", "category": "HARDWARE",
+     "desc": "Develop an intelligent microgrid controller that manages distributed renewable assets and balances islanded microgrid clusters.",
+     "components": ["ESP32 Dev Board", "4-Channel 5V Relay Isolation Module", "ACS712 Current Sensors", "20x4 Character LCD with I2C Backpack", "12V 3A SMPS"]},
+    {"id": 39, "domain": "Renewable Energy & Power Systems", "title": "Wind Energy & Predictive Maintenance", "category": "HARDWARE",
+     "desc": "Develop a wind-turbine condition monitoring unit tracking vibration, bearing temperature, RPM, and power output to predict failures.",
+     "components": ["Mini 12V Air Turbine DC Generator Motor", "SW-420 Vibration Sensor Module", "DS18B20 Digital Temperature Sensor", "LM393 Optical IR Speed/RPM Sensor", "ESP32 Dev Board"]},
+    {"id": 40, "domain": "Renewable Energy & Power Systems", "title": "Regenerative Energy Recovery (Elevators/Lifts)", "category": "HARDWARE",
+     "desc": "Develop a scaled regenerative braking system capturing energy from descending elevators and safely storing or dumping excess power.",
+     "components": ["12V High-Torque DC Motor/Generator", "IRFB3077 N-MOSFET (Regen Controller)", "Supercapacitor Bank (5.4V 5F)", "Ceramic Power Dump Resistors (10Ω 10W)", "Arduino Nano"]},
+    {"id": 41, "domain": "Renewable Energy & Power Systems", "title": "Solar PV Predictive Maintenance & Soiling Detection", "category": "HARDWARE",
+     "desc": "Develop a low-cost PV monitoring device comparing expected irradiance with actual output to identify persistent soiling and dust buildup.",
+     "components": ["6V 3W Mini Solar Panel", "BH1750 Digital Ambient Light / Lux Sensor (I2C)", "LM35 Precision Analog Temperature Sensor", "INA219 / Current Sensing Resistors", "ESP32 DevKit"]},
+    {"id": 42, "domain": "Renewable Energy & Power Systems", "title": "Solar Farm Yield Forecasting", "category": "SOFTWARE",
+     "desc": "Develop a software system integrating meteorological satellite feeds to predict hour-ahead solar power generation for transmission grid stability.",
+     "components": []},
+    {"id": 43, "domain": "Renewable Energy & Power Systems", "title": "Microgrid Load Balancing Algorithm", "category": "SOFTWARE",
+     "desc": "Develop an autonomous software engine that dynamically redistributes renewable power among peer-to-peer consumers to avoid localized blackouts.",
+     "components": []},
 
-# ---------------------------------------------------------
-# SCREEN 3: PROBLEM STATEMENT BREAKDOWN
-# ---------------------------------------------------------
-elif st.session_state.step == 3:
-    ps_id = st.session_state.selected_ps_id
-    ps_data = PROBLEM_STATEMENTS[ps_id]
-    
-    st.title(f"Problem Statement {ps_id}")
-    st.markdown("---")
-    st.markdown(f"**1. Domain:** {ps_data['domain']}")
-    st.markdown(f"**2. Theme:** {ps_data['theme']}")
-    st.markdown(f"**3. Category:** {ps_data['category']}")
-    st.markdown(f"**4. Detailed Problem Statement:**\n> {ps_data['description']}")
-    st.markdown("---")
-    
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        if st.button("Back"):
-            st.session_state.step = 2
-            st.rerun()
-    with col2:
-        if st.button("Component List", type="primary"):
-            st.session_state.final_components = ps_data["components"].copy()
-            st.session_state.custom_mode = False
-            st.session_state.step = 4
-            st.rerun()
+    # DOMAIN 06: Aerospace, Aviation & Space Tech
+    {"id": 44, "domain": "Aerospace, Aviation & Space Tech", "title": "UAV Safety & Autonomous Landing", "category": "HARDWARE",
+     "desc": "Develop an autonomous emergency landing unit for drones that detects in-flight propulsion failure and guides descent to a safe landing zone.",
+     "components": ["ESP32-S3 DevKit", "BMP280 Barometric Pressure Sensor", "VL53L0X Time-of-Flight Laser Distance Sensor", "MPU-6050 6-Axis IMU", "SG90 Parachute Release Servo"]},
+    {"id": 45, "domain": "Aerospace, Aviation & Space Tech", "title": "Autonomous Navigation & Collision Avoidance", "category": "HARDWARE",
+     "desc": "Develop an obstacle detection and path replanning module enabling UAVs to detect powerlines and obstacles in real time.",
+     "components": ["ESP32-S3 DevKit", "VL53L0X Laser Distance Sensors (Pack of 3)", "HC-SR04 Ultrasonic Sensors", "Small BLDC Motor + ESC", "Mini Buzzer"]},
+    {"id": 46, "domain": "Aerospace, Aviation & Space Tech", "title": "Energy-Efficient UAV Mission Planning", "category": "HARDWARE",
+     "desc": "Develop an energy-aware UAV mission computer that recalculates flight paths dynamically based on instantaneous battery discharge and headwind.",
+     "components": ["ESP32-WROOM-32U (External Antenna)", "NEO-6M GPS Module", "BMP280 Pressure Sensor", "LM2596 Step-Down Buck Module"]},
+    {"id": 47, "domain": "Aerospace, Aviation & Space Tech", "title": "Aircraft Electrical Systems Fault Management", "category": "HARDWARE",
+     "desc": "Develop a multi-bus electrical fault isolation system that disconnects shorted avionics lines and reroutes power via alternate buses.",
+     "components": ["ESP32 DevKit", "4-Channel 5V Relay Isolation Module", "PC817 Optocoupler ICs", "12V 5A Industrial Metal SMPS", "Status Indicator LEDs"]},
+    {"id": 48, "domain": "Aerospace, Aviation & Space Tech", "title": "Autonomous Search & Rescue Drone Payload", "category": "HARDWARE",
+     "desc": "Develop a compact drone payload that scans disaster zones, detects human presence using thermal signatures, and beacons GPS coordinates.",
+     "components": ["ESP32-S3 DevKit with OV2640 Camera", "MLX90614 Non-Contact Infrared Temperature Sensor", "NEO-6M GPS Module with Active Ceramic Antenna", "High-Decibel Siren Module"]},
+    {"id": 49, "domain": "Aerospace, Aviation & Space Tech", "title": "Spacecraft Power Management System", "category": "HARDWARE",
+     "desc": "Develop a fault-tolerant satellite EPS module prioritizing onboard instrument power and shedding non-critical payload during eclipse periods.",
+     "components": ["ESP32-C3 Dev Board", "6V Mini Solar Panel", "TP4056 Charger + Li-ion Cell", "TPS2051 Current-Limited Power Distribution Switch IC", "INA219 Power Monitor"]},
+    {"id": 50, "domain": "Aerospace, Aviation & Space Tech", "title": "Space Safety & Debris Collision Avoidance", "category": "SOFTWARE",
+     "desc": "Develop an orbital mechanics simulator that ingests TLE space debris data, predicts conjunction risks, and computes fuel-optimal thruster burns.",
+     "components": []},
+    {"id": 51, "domain": "Aerospace, Aviation & Space Tech", "title": "UAV Fleet Traffic Management (UTM)", "category": "SOFTWARE",
+     "desc": "Develop a centralized airspace coordinator managing commercial delivery drone corridors, adhering to geofenced no-fly zones.",
+     "components": []},
+    {"id": 52, "domain": "Aerospace, Aviation & Space Tech", "title": "Satellite Telemetry Anomaly Detection", "category": "SOFTWARE",
+     "desc": "Develop an AI/ML time-series engine that parses multi-channel satellite housekeeping telemetry to uncover subtle degradation patterns.",
+     "components": []},
 
-# ---------------------------------------------------------
-# SCREEN 4: COMPONENT LIST & CUSTOM REPLACEMENT
-# ---------------------------------------------------------
-elif st.session_state.step == 4:
-    ps_id = st.session_state.selected_ps_id
-    default_comps = PROBLEM_STATEMENTS[ps_id]["components"]
-    
-    st.title("Step 4: Component Allotment")
-    st.write("Review the components provided by the college for this statement.")
-    
-    table_data = [{"Criteria / Category": cat, "College Provided Component": comp} 
-                  for cat, comp in default_comps.items()]
-    st.table(table_data)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Use College Provided Components"):
-            st.session_state.final_components = default_comps.copy()
-            st.session_state.step = 5
-            st.rerun()
-    with col2:
-        if st.button("Customize Components"):
-            st.session_state.custom_mode = True
-            
-    if st.session_state.custom_mode:
-        st.markdown("---")
-        st.subheader("Customize Your Hardware")
-        st.write("Enter your component preferences below. Unchanged textboxes will keep the default college choice.")
-        
-        custom_inputs = {}
-        with st.form("custom_comp_form"):
-            for criteria, college_comp in default_comps.items():
-                custom_inputs[criteria] = st.text_input(
-                    label=f"Criteria: {criteria}",
-                    value="",
-                    placeholder=f"Default: {college_comp}"
+    # DOMAIN 07: Cybersecurity & Digital Forensics
+    {"id": 53, "domain": "Cybersecurity & Digital Forensics", "title": "Wireless Network Rogue AP & Deauth Defense", "category": "HARDWARE",
+     "desc": "Develop an edge intrusion monitor that detects 802.11 deauthentication attacks, rogue Wi-Fi clones, and maintains an offline alert log.",
+     "components": ["ESP32-WROOM-32 Dev Board", "0.96-inch I2C OLED Display (SSD1306)", "Active Piezo Buzzer", "MicroSD Card Module + 16GB Card", "TP4056 + Battery"]},
+    {"id": 54, "domain": "Cybersecurity & Digital Forensics", "title": "Hardware USB Firewall & BadUSB Filter", "category": "HARDWARE",
+     "desc": "Develop an inline hardware security device that screens incoming USB endpoints, dropping rogue Human Interface Device (HID) keystroke injection.",
+     "components": ["MAX3421E USB Host Controller Module", "Arduino Nano / ESP32-S3", "0.96-inch OLED Screen", "Status Indicator LEDs", "TPD4E001 ESD Protection Array"]},
+    {"id": 55, "domain": "Cybersecurity & Digital Forensics", "title": "Digital Forensics & Chronological Evidence Analysis", "category": "SOFTWARE",
+     "desc": "Develop an automated digital forensic tool parsing file system metadata, generating cryptographic SHA-256 hashes, and building forensic timelines.",
+     "components": []},
+    {"id": 56, "domain": "Cybersecurity & Digital Forensics", "title": "Forensic Hardware Write-Blocker", "category": "HARDWARE",
+     "desc": "Develop an inline forensic write-blocker intercepting SD/USB mass storage commands, allowing investigators read-only analysis without contamination.",
+     "components": ["MicroSD Card Adapter Module (SPI)", "Arduino Nano V3", "74HC14 Schmitt Trigger IC", "0.96-inch OLED Screen", "Tactile Status Buttons"]},
+    {"id": 57, "domain": "Cybersecurity & Digital Forensics", "title": "Cyber Incident Immutable Chain-of-Custody", "category": "SOFTWARE",
+     "desc": "Develop an evidence repository establishing tamper-evident chains of custody using Merkle trees and cryptographic verification.",
+     "components": []},
+    {"id": 58, "domain": "Cybersecurity & Digital Forensics", "title": "Secure Digital Forensics Field Acquisition Kit", "category": "HARDWARE",
+     "desc": "Develop a portable, biometric/RFID access-controlled storage imager that logs session operators and detects physical chassis tampering.",
+     "components": ["ESP32 DevKit", "RC522 13.56MHz RFID Module + Master Admin Card", "SW-420 Tamper/Vibration Sensor", "MicroSD Card Module", "12V Solenoid Cabinet Lock", "TIP122 Darlington Transistor"]},
+    {"id": 59, "domain": "Cybersecurity & Digital Forensics", "title": "Ransomware Behavior Isolation System", "category": "SOFTWARE",
+     "desc": "Develop an endpoint security agent detecting rapid, high-entropy file modifications and autonomously isolating infected hosts from the network.",
+     "components": []},
+    {"id": 60, "domain": "Cybersecurity & Digital Forensics", "title": "Automated Phishing Threat Intelligence Pipeline", "category": "SOFTWARE",
+     "desc": "Develop a triage pipeline extracting headers and URLs from suspicious user-submitted emails, querying sandboxes and updating security boundaries.",
+     "components": []},
+
+    # DOMAIN 08: Agriculture & Aquaculture
+    {"id": 61, "domain": "Agriculture & Aquaculture", "title": "Water Management & Smart Precision Irrigation", "category": "HARDWARE",
+     "desc": "Develop an autonomous irrigation controller that evaluates localized soil moisture and temperature to govern multi-valve water delivery.",
+     "components": ["ESP32 DevKit", "Capacitive Soil Moisture Sensor V1.2 (Corrosion Proof)", "DS18B20 Waterproof Soil Temp Probe", "12V DC Solenoid Water Valve (1/2 Inch)", "TIP122 Transistor / 1-Channel Relay", "12V 2A SMPS"]},
+    {"id": 62, "domain": "Agriculture & Aquaculture", "title": "Precision Agriculture – Drone Crop Health Surveillance", "category": "HARDWARE",
+     "desc": "Develop a drone payload using calibrated multispectral/optical sensors to survey vegetative health and identify crop blight.",
+     "components": ["ESP32-S3 DevKit with OV5640 5MP Camera", "MicroSD Card Module + 16GB Fast Card", "BH1750 Ambient Light Sensor", "LM2596 DC-DC Buck Converter (from drone battery)"]},
+    {"id": 63, "domain": "Agriculture & Aquaculture", "title": "Agricultural Pump Health & Energy Optimization", "category": "HARDWARE",
+     "desc": "Develop an edge diagnostic monitor detecting dry running, motor cavitation, phase unbalance, and abnormal pump vibration.",
+     "components": ["ESP32 Dev Board", "SW-420 Vibration Sensor Module", "DS18B20 Waterproof Stainless Motor Temp Probe", "1-Channel 30A High-Current Relay Module", "16x2 I2C Character LCD"]},
+    {"id": 64, "domain": "Agriculture & Aquaculture", "title": "Crop Frost Early Warning & Automated Mitigation", "category": "HARDWARE",
+     "desc": "Develop a micro-climate forecasting node calculating frost points and automatically actuating protective thermal sprinklers or warm blowers.",
+     "components": ["ESP32 DevKit", "SHT31 Precision Temp & Humidity Sensor", "BMP280 Barometric Pressure & Dew Point Sensor", "12V 2-Channel Relay Module (Sprinkler/Heater)", "12V Mini Submersible Water Pump"]},
+    {"id": 65, "domain": "Agriculture & Aquaculture", "title": "Soil Health & NPK Proxy Edge Monitoring", "category": "HARDWARE",
+     "desc": "Develop a field probe evaluating soil electrical conductivity (EC), pH, and moisture parameters to summarize soil viability without internet.",
+     "components": ["ESP32-S3 DevKit", "Analog Soil pH Sensor Probe & Board", "Analog Soil Electrical Conductivity (EC) Probe", "Capacitive Soil Moisture Probes", "CA3140 High-Impedance Op-Amp IC", "1.8-inch TFT Display"]},
+    {"id": 66, "domain": "Agriculture & Aquaculture", "title": "Aquaculture & Water Quality Management", "category": "HARDWARE",
+     "desc": "Develop an automated water quality system monitoring dissolved oxygen proxies, pH, and turbidity, driving aerators when parameters deteriorate.",
+     "components": ["ESP32 DevKit", "Analog pH Sensor Kit with BNC Glass Electrode", "Analog Optical Turbidity Sensor Module", "DS18B20 Waterproof Digital Temp Sensor", "4-Channel 5V Relay Module (Aerator Relays)", "12V 3A SMPS"]},
+    {"id": 67, "domain": "Agriculture & Aquaculture", "title": "Smart Greenhouse Climate & Fogging Automation", "category": "HARDWARE",
+     "desc": "Develop an automated greenhouse system regulating vapor pressure deficits (VPD) through synchronized exhaust venting and ultrasonic misting.",
+     "components": ["ESP32 DevKit", "SHT31 Temp & Relative Humidity Sensor", "BH1750 Digital Lux Sensor", "5V/12V Ultrasonic Mist Maker Disk", "12V Brushless DC Blower Fan", "2-Channel Relay Module"]},
+    {"id": 68, "domain": "Agriculture & Aquaculture", "title": "Crop Yield Prediction & Commodity Market Triage", "category": "SOFTWARE",
+     "desc": "Develop a predictive analytics software pipeline fusing NDVI satellite imagery and commodity indices to suggest optimal harvest liquidation windows.",
+     "components": []},
+    {"id": 69, "domain": "Agriculture & Aquaculture", "title": "Aquaculture Feeding Rate Optimization Engine", "category": "SOFTWARE",
+     "desc": "Develop an algorithmic feeding controller adjusting feeding schedules dynamically based on water temperature, dissolved oxygen, and fish biomass growth.",
+     "components": []}
+]
+
+# ==============================================================================
+# 3. NAVIGATION TABS
+# ==============================================================================
+st.markdown('<div class="main-title">⚡ Hackathon 2026 Registration & Resource Portal</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Explore problem statements, inspect expected components, and complete team registration.</div>', unsafe_allow_html=True)
+
+tab_explore, tab_components, tab_register = st.tabs([
+    "🔍 1. Problem Statements & Compendium",
+    "📦 2. Expected Components Inspector",
+    "📝 3. Team Registration & Payment"
+])
+
+# ==============================================================================
+# TAB 1: PROBLEM STATEMENTS & COMPENDIUM
+# ==============================================================================
+with tab_explore:
+    st.write("### Official Problem Statement Compendium")
+    st.write("Browse all published problem statements across eight technical domains. You can also download the complete compendium Word document below:")
+
+    # Document Download Section
+    col_doc1, col_doc2 = st.columns([2, 1])
+    with col_doc1:
+        st.info("📄 **Problem_Statement_Compendium_v2.docx** contains detailed technical scope, problem descriptions, and submission criteria.")
+    with col_doc2:
+        doc_filename = "Problem_Statement_Compendium_v2.docx"
+        if os.path.exists(doc_filename):
+            with open(doc_filename, "rb") as fp:
+                st.download_button(
+                    label="⬇️ Download Compendium (.docx)",
+                    data=fp,
+                    file_name="Problem_Statement_Compendium_v2.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
                 )
-            
-            submit_custom = st.form_submit_button("Confirm and Merge Components")
-            if submit_custom:
-                merged = {}
-                for criteria, college_comp in default_comps.items():
-                    user_val = custom_inputs[criteria].strip()
-                    merged[criteria] = user_val if user_val else college_comp
-                st.session_state.final_components = merged
-                st.session_state.step = 5
-                st.rerun()
+        else:
+            st.button(
+                label="⬇️ Download Compendium (Unavailable)",
+                disabled=True,
+                help=f"File '{doc_filename}' not found in the root directory. Place the document in the repository root to enable downloads.",
+                use_container_width=True
+            )
 
-# ---------------------------------------------------------
-# SCREEN 5: FINAL CONFIRMATION & CASHFREE GATEWAY
-# ---------------------------------------------------------
-elif st.session_state.step == 5:
-    st.title("Step 5: Review & Registration Fee Payment")
-    
-    st.subheader("Final Hardware Component List")
-    final_table = [{"Criteria": cat, "Final Selected Component": comp} 
-                   for cat, comp in st.session_state.final_components.items()]
-    st.table(final_table)
-    
     st.markdown("---")
-    st.subheader("Pay Registration Fee (₹300)")
+
+    # Filter Controls
+    f_col1, f_col2, f_col3 = st.columns([1.5, 1, 1.5])
+    domains = ["All Domains"] + sorted(list(set(ps["domain"] for ps in PROBLEM_STATEMENTS)))
+    with f_col1:
+        selected_domain = st.selectbox("Filter by Technical Domain", domains)
+    with f_col2:
+        selected_cat = st.selectbox("Category Filter", ["All Categories", "HARDWARE", "SOFTWARE"])
+    with f_col3:
+        search_query = st.text_input("Search Title or Keywords", placeholder="e.g. Flood, Solar, Battery, AI")
+
+    # Filter dataset
+    filtered_list = PROBLEM_STATEMENTS
+    if selected_domain != "All Domains":
+        filtered_list = [ps for ps in filtered_list if ps["domain"] == selected_domain]
+    if selected_cat != "All Categories":
+        filtered_list = [ps for ps in filtered_list if ps["category"] == selected_cat]
+    if search_query:
+        q = search_query.lower()
+        filtered_list = [ps for ps in filtered_list if q in ps["title"].lower() or q in ps["desc"].lower()]
+
+    st.write(f"Showing **{len(filtered_list)}** matching problem statement(s):")
+
+    # Render Statements
+    for ps in filtered_list:
+        with st.expander(f"PS #{ps['id']:02d}: {ps['title']} ({ps['category']})"):
+            c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
+            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>Domain:</b> {ps["domain"]}', unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
+            if ps["category"] == "HARDWARE":
+                st.caption(f"Suggested Components: {', '.join(ps['components'][:4])}...")
+            else:
+                st.caption("No hardware required for this problem statement (Software Track).")
+
+# ==============================================================================
+# TAB 2: EXPECTED COMPONENTS INSPECTOR
+# ==============================================================================
+with tab_components:
+    st.write("### Expected Components Inspector")
+    st.write("Select any problem statement to examine its hardware requirements. For software track problems, no hardware components are required.")
+
+    # Dropdown selector
+    ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
+    selected_ps_str = st.selectbox("Choose a Problem Statement to inspect:", ps_titles)
     
-    # ---> PASTE YOUR CASHFREE TEST KEYS HERE <---
-    CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
-    CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
-    
-    # Uses the sandbox (test) environment. Change 'sandbox.cashfree' to 'api.cashfree' when going live.
-    CASHFREE_ENDPOINT = "https://sandbox.cashfree.com/pg/links"
-    
-    # Generate a unique Cashfree Payment Link ONLY ONCE per session
-    if "cf_link_id" not in st.session_state:
-        with st.spinner("Generating secure payment gateway..."):
-            try:
-                txn_ref = f"REG_{int(time.time())}"
-                
-                headers = {
-                    "accept": "application/json",
-                    "content-type": "application/json",
-                    "x-api-version": "2023-08-01",
-                    "x-client-id": CASHFREE_APP_ID,
-                    "x-client-secret": CASHFREE_SECRET_KEY
-                }
-                
-                payload = {
-                    "customer_details": {
-                        "customer_phone": st.session_state.team_data["leader_phone"],
-                        "customer_name": st.session_state.team_data["leader_name"]
-                    },
-                    "link_id": txn_ref,
-                    "link_amount": 300.00,
-                    "link_currency": "INR",
-                    "link_purpose": f"Hackathon PS {st.session_state.selected_ps_id}"
-                }
-                
-                # Call Cashfree to generate the link
-                response = requests.post(CASHFREE_ENDPOINT, json=payload, headers=headers)
-                data = response.json()
-                
-                if response.status_code == 200:
-                    st.session_state.cf_link_id = txn_ref
-                    st.session_state.cf_link_url = data["link_url"]
-                    st.session_state.txn_ref = txn_ref
+    # Extract ID
+    selected_ps_id = int(selected_ps_str.split(":")[0].replace("PS #", ""))
+    ps_data = next(item for item in PROBLEM_STATEMENTS if item["id"] == selected_ps_id)
+
+    st.markdown("---")
+    st.subheader(f"PS #{ps_data['id']:02d}: {ps_data['title']}")
+    st.write(f"**Domain:** {ps_data['domain']}")
+
+    # Hardware vs. Software conditional UI
+    if ps_data["category"] == "SOFTWARE":
+        st.markdown('<span class="badge-sw">SOFTWARE TRACK</span>', unsafe_allow_html=True)
+        st.info("ℹ️ **There is no hardware or components for this problem statement.**")
+        st.markdown("""
+        Teams choosing this statement will develop pure software solutions (web, mobile, cloud, or ML pipelines). 
+        Evaluation focuses on architecture, algorithm design, user experience, and computational performance.
+        """)
+    else:
+        st.markdown('<span class="badge-hw">HARDWARE TRACK</span>', unsafe_allow_html=True)
+        st.write("#### Expected components list for this problem statement:")
+        
+        # Display components without any mention of college
+        for idx, comp in enumerate(ps_data["components"], 1):
+            st.markdown(f"- **{idx}.** {comp}")
+            
+        st.caption("Note: This list represents the expected components required to prototype a functional solution for this problem statement.")
+
+# ==============================================================================
+# TAB 3: REGISTRATION & PAYMENT
+# ==============================================================================
+with tab_register:
+    st.write("### Team Registration & Seat Confirmation")
+    st.write("Each team can have up to **5 members**. A minimum of **3 members** is required (Members 4 and 5 are completely optional).")
+    st.info("💳 **Registration Fee: ₹350 per team**")
+
+    with st.form("team_registration_form"):
+        st.subheader("1. Team Profile")
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            team_name = st.text_input("Team Name *", placeholder="e.g. CodeStormers")
+        with col_t2:
+            assigned_ps = st.selectbox("Selected Problem Statement *", ps_titles)
+
+        st.markdown("---")
+        st.subheader("2. Core Members (Compulsory)")
+        
+        st.markdown("**Member 1 (Team Leader)**")
+        col_m1a, col_m1b, col_m1c = st.columns(3)
+        with col_m1a:
+            leader_name = st.text_input("Leader Full Name *", placeholder="Leader Name")
+        with col_m1b:
+            leader_email = st.text_input("Leader Email *", placeholder="leader@college.edu")
+        with col_m1c:
+            leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
+
+        st.markdown("**Member 2**")
+        col_m2a, col_m2b = st.columns(2)
+        with col_m2a:
+            m2_name = st.text_input("Member 2 Full Name *", placeholder="Full Name")
+        with col_m2b:
+            m2_email = st.text_input("Member 2 Email *", placeholder="member2@college.edu")
+
+        st.markdown("**Member 3**")
+        col_m3a, col_m3b = st.columns(2)
+        with col_m3a:
+            m3_name = st.text_input("Member 3 Full Name *", placeholder="Full Name")
+        with col_m3b:
+            m3_email = st.text_input("Member 3 Email *", placeholder="member3@college.edu")
+
+        st.markdown("---")
+        st.subheader("3. Additional Members (Optional)")
+        st.caption("Leave Member 4 and Member 5 blank if your team consists of 3 members.")
+
+        col_m4a, col_m4b = st.columns(2)
+        with col_m4a:
+            m4_name = st.text_input("Member 4 Full Name (Optional)", placeholder="Leave blank if none")
+        with col_m4b:
+            m4_email = st.text_input("Member 4 Email (Optional)", placeholder="Leave blank if none")
+
+        col_m5a, col_m5b = st.columns(2)
+        with col_m5a:
+            m5_name = st.text_input("Member 5 Full Name (Optional)", placeholder="Leave blank if none")
+        with col_m5b:
+            m5_email = st.text_input("Member 5 Email (Optional)", placeholder="Leave blank if none")
+
+        st.markdown("---")
+        submit_btn = st.form_submit_button("Generate Payment QR Code (₹350)")
+
+    # Form Submission and Validation
+    if submit_btn:
+        # Enforce compulsory fields for Members 1, 2, and 3 only
+        if not team_name.strip():
+            st.error("⚠️ Team Name is required.")
+        elif not leader_name.strip() or not leader_email.strip() or not leader_phone.strip():
+            st.error("⚠️ All Leader details (Name, Email, and Phone) are required.")
+        elif not m2_name.strip() or not m2_email.strip():
+            st.error("⚠️ Member 2 details (Name and Email) are required.")
+        elif not m3_name.strip() or not m3_email.strip():
+            st.error("⚠️ Member 3 details (Name and Email) are required.")
+        else:
+            # Store in session state
+            order_id = f"HACK_{uuid.uuid4().hex[:6].upper()}"
+            st.session_state["registration_record"] = {
+                "order_id": order_id,
+                "team_name": team_name,
+                "ps": assigned_ps,
+                "leader_name": leader_name,
+                "leader_email": leader_email,
+                "leader_phone": leader_phone,
+                "m2_name": m2_name,
+                "m3_name": m3_name,
+                "m4_name": m4_name if m4_name.strip() else "N/A",
+                "m5_name": m5_name if m5_name.strip() else "N/A",
+                "amount": 350.00,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            st.success("✅ Team details validated! Proceed with the payment below.")
+
+    # Render Payment Section if registration session exists
+    if "registration_record" in st.session_state:
+        rec = st.session_state["registration_record"]
+        st.markdown("---")
+        st.write("### Payment Checkout")
+
+        col_pay1, col_pay2 = st.columns([1, 1.5])
+        with col_pay1:
+            # Generate UPI QR Code for ₹350
+            upi_id = "9322753587@ptyes"  # Replace with actual UPI ID
+            payee_name = "Hackathon Organizing Team"
+            upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(payee_name)}&am=350.00&cu=INR&tn={rec['order_id']}"
+
+            qr = qrcode.QRCode(version=1, box_size=8, border=3)
+            qr.add_data(upi_string)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="#1E293B", back_color="white")
+
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            st.image(buf.getvalue(), caption="Scan with GPay, PhonePe, or Paytm", width=240)
+
+        with col_pay2:
+            st.markdown(f"""
+            **Order Reference:** `{rec['order_id']}`  
+            **Team Name:** {rec['team_name']}  
+            **Problem Statement:** {rec['ps']}  
+            **Total Payable:** **₹350.00**  
+            
+            **Instructions:**
+            1. Open any UPI application on your mobile device.
+            2. Scan the QR code on the left. The amount is fixed at **₹350**.
+            3. Once the transaction completes, copy the 12-digit **UTR / Transaction Reference Number** from your payment app and submit it below to finalize your registration.
+            """)
+
+        # UTR Verification Input
+        with st.form("utr_verification_form"):
+            utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number", max_chars=12, placeholder="12 numeric digits")
+            submit_utr = st.form_submit_button("Submit Payment Reference")
+
+            if submit_utr:
+                if not utr_input.isdigit() or len(utr_input) != 12:
+                    st.error("❌ Please provide a valid 12-digit numeric UPI UTR number.")
                 else:
-                    st.error(f"Cashfree API Error: {data.get('message', 'Check your API keys')}")
-            except Exception as e:
-                st.error(f"Error connecting to gateway: {str(e)}")
-    
-    # Display the Payment Link and Verification UI
-    if "cf_link_url" in st.session_state:
-        st.write("Scan the QR code below or click the button to pay securely via Cashfree.")
-        
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            # Generate QR from Cashfree link
-            qr_img = generate_url_qr(st.session_state.cf_link_url)
-            st.image(qr_img, caption=f"Ref: {st.session_state.txn_ref}", width=250)
-            
-            st.markdown(f"[**👉 Click Here to Pay Online**]({st.session_state.cf_link_url})")
-        
-        with col2:
-            st.info("After completing the payment on the Cashfree screen, click the verification button below.")
-            
-            # True API Verification
-            if st.button("Verify Payment Status"):
-                with st.spinner("Contacting Cashfree servers..."):
-                    try:
-                        headers = {
-                            "accept": "application/json",
-                            "x-api-version": "2023-08-01",
-                            "x-client-id": CASHFREE_APP_ID,
-                            "x-client-secret": CASHFREE_SECRET_KEY
-                        }
-                        
-                        # Fetch the status of this specific link
-                        check_url = f"{CASHFREE_ENDPOINT}/{st.session_state.cf_link_id}"
-                        resp = requests.get(check_url, headers=headers)
-                        status_data = resp.json()
-                        
-                        if resp.status_code == 200 and status_data.get("link_status") == "PAID":
-                            st.session_state.payment_verified = True
-                            
-                            # Log to Google Sheets
-                            team = st.session_state.team_data
-                            ps_data = PROBLEM_STATEMENTS[st.session_state.selected_ps_id]
-                            comp_summary = "\n".join([f"{k}: {v}" for k, v in st.session_state.final_components.items()])
-                            
-                            row_data = [
-                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                st.session_state.txn_ref,
-                                "₹300 - VERIFIED",
-                                team["leader_name"],
-                                team["leader_phone"],
-                                team["m2_name"],
-                                team["m2_phone"],
-                                team["m3_name"],
-                                team["m4_name"],
-                                team["m5_name"],
-                                f"PS {st.session_state.selected_ps_id}: {ps_data['theme']}",
-                                ps_data["domain"],
-                                comp_summary
-                            ]
-                            
-                            success, msg = append_to_sheet(row_data)
-                            if success:
-                                st.success("Payment Verified! Registration complete.")
-                                st.balloons()
-                                time.sleep(3)
-                                st.session_state.step = 6
-                                st.rerun()
-                            else:
-                                st.error(f"Payment verified by Cashfree, but Google Sheets failed: {msg}")
-                        else:
-                            current_status = status_data.get('link_status', 'UNKNOWN')
-                            st.error(f"Payment not complete. Current Cashfree status: {current_status}")
-                    except Exception as e:
-                        st.error(f"Verification Error: {str(e)}")
-# ---------------------------------------------------------
-# SCREEN 6: SUCCESS SCREEN
-# ---------------------------------------------------------
-elif st.session_state.step == 6:
-    st.title("Registration Confirmed!")
-    st.success("Your team registration and component configuration have been recorded.")
-    st.write("A confirmation record has been securely logged to the Google Sheet.")
-    if st.button("Register Another Team"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+                    st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
+                    st.balloons()
+                    st.info("Your registration status has been set to **Pending Verification**. A confirmation email will be dispatched once our settlement reconciles.")
+
+# ==============================================================================
+# FOOTER
+# ==============================================================================
+st.markdown("---")
+st.markdown("<p style='text-align: center; color: #94A3B8; font-size: 13px;'>Hackathon 2026 Technical Portal • Built with Streamlit</p>", unsafe_allow_html=True)

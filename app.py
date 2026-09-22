@@ -398,8 +398,6 @@ with tab_register:
             leader_name = st.text_input("Leader Full Name *", placeholder="Leader Name")
         with col_m1b:
             leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
-        with col_m1c:
-            leader_email = st.text_input("Leader Email *", placeholder="Leader Email")
 
         st.markdown("**Member 2**")
         m2_name = st.text_input("Member 2 Full Name *", placeholder="Full Name")

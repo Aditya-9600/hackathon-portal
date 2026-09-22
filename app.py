@@ -4,6 +4,7 @@ import qrcode
 from io import BytesIO
 import urllib.parse
 import uuid
+import requests
 import datetime
 import os
 

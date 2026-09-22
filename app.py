@@ -284,13 +284,13 @@ with tab_explore:
 
     # Document Download Section
     st.write("") 
-    doc_filename = "Problem_Statement_Compendium_v2.docx"
+    doc_filename = "Problem_Statements_Updated.docx"
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
             st.download_button(
                 label="⬇️ Download Compendium (.docx)",
                 data=fp,
-                file_name="Problem_Statement_Compendium_v2.docx",
+                file_name="Problem_Statements_Updated.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )
@@ -398,6 +398,8 @@ with tab_register:
             leader_name = st.text_input("Leader Full Name *", placeholder="Leader Name")
         with col_m1b:
             leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
+        with col_m1c:
+            leader_email = st.text_input("Leader Email *", placeholder="Leader Email")
 
         st.markdown("**Member 2**")
         m2_name = st.text_input("Member 2 Full Name *", placeholder="Full Name")

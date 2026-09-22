@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import qrcode
 from io import BytesIO
 import urllib.parse
@@ -257,121 +258,19 @@ PROBLEM_STATEMENTS = [
 # 3. NAVIGATION TABS
 # ==============================================================================
 st.markdown('<div class="main-title">⚡ Hackathon 2026 Registration & Resource Portal</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Explore problem statements, inspect components, and complete your team registration.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Complete your team registration, explore problem statements, and inspect components.</div>', unsafe_allow_html=True)
 
 ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
-# Reordered tabs: 1. Statements, 2. Components, 3. Registration
-tab_explore, tab_components, tab_register = st.tabs([
-    "🔍 1. Problem Statements",
-    "📦 2. Component List",
-    "📝 3. Team Registration & Payment"
+# Reordered tabs: 1. Registration, 2. Statements, 3. Components
+tab_register, tab_explore, tab_components = st.tabs([
+    "📝 1. Team Registration & Payment",
+    "🔍 2. Problem Statements",
+    "📦 3. Component List"
 ])
 
 # ==============================================================================
-# TAB 1: PROBLEM STATEMENTS & COMPENDIUM
-# ==============================================================================
-with tab_explore:
-    st.write("### Official Problem Statement Compendium")
-    st.write("Browse all published problem statements across eight technical domains. You can also download the complete compendium Word document below:")
-
-    # Document Download Section
-    col_doc1, col_doc2 = st.columns([2, 1])
-    with col_doc1:
-        st.info("📄 **Problem_Statement_Compendium_v2.docx** contains detailed technical scope, problem descriptions, and submission criteria.")
-    with col_doc2:
-        doc_filename = "Problem_Statement_Compendium_v2.docx"
-        if os.path.exists(doc_filename):
-            with open(doc_filename, "rb") as fp:
-                st.download_button(
-                    label="⬇️ Download Compendium (.docx)",
-                    data=fp,
-                    file_name="Problem_Statement_Compendium_v2.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True
-                )
-        else:
-            st.button(
-                label="⬇️ Download Compendium (Unavailable)",
-                disabled=True,
-                help=f"File '{doc_filename}' not found in the root directory. Place the document in the repository root to enable downloads.",
-                use_container_width=True
-            )
-
-    st.markdown("---")
-
-    # Filter Controls
-    f_col1, f_col2, f_col3 = st.columns([1.5, 1, 1.5])
-    domains = ["All Domains"] + sorted(list(set(ps["domain"] for ps in PROBLEM_STATEMENTS)))
-    with f_col1:
-        selected_domain = st.selectbox("Filter by Technical Domain", domains)
-    with f_col2:
-        selected_cat = st.selectbox("Category Filter", ["All Categories", "HARDWARE", "SOFTWARE"])
-    with f_col3:
-        search_query = st.text_input("Search Title or Keywords", placeholder="e.g. Flood, Solar, Battery, AI")
-
-    # Filter dataset
-    filtered_list = PROBLEM_STATEMENTS
-    if selected_domain != "All Domains":
-        filtered_list = [ps for ps in filtered_list if ps["domain"] == selected_domain]
-    if selected_cat != "All Categories":
-        filtered_list = [ps for ps in filtered_list if ps["category"] == selected_cat]
-    if search_query:
-        q = search_query.lower()
-        filtered_list = [ps for ps in filtered_list if q in ps["title"].lower() or q in ps["desc"].lower()]
-
-    st.write(f"Showing **{len(filtered_list)}** matching problem statement(s):")
-
-    # Render Statements
-    for ps in filtered_list:
-        with st.expander(f"PS #{ps['id']:02d}: {ps['title']} ({ps['category']})"):
-            c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
-            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>Domain:</b> {ps["domain"]}', unsafe_allow_html=True)
-            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
-            if ps["category"] == "HARDWARE":
-                st.caption(f"Suggested Components: {', '.join(ps['components'][:4])}...")
-            else:
-                st.caption("No hardware required for this problem statement (Software Track).")
-
-
-# ==============================================================================
-# TAB 2: COMPONENT LIST (HARDWARE INSPECTOR)
-# ==============================================================================
-with tab_components:
-    st.write("### Expected Component List")
-    st.write("Select any problem statement to examine its hardware requirements. For software track problems, no hardware components are required.")
-
-    # Dropdown selector
-    selected_ps_str = st.selectbox("Choose a Problem Statement to inspect:", ps_titles)
-    
-    # Extract ID
-    selected_ps_id = int(selected_ps_str.split(":")[0].replace("PS #", ""))
-    ps_data = next(item for item in PROBLEM_STATEMENTS if item["id"] == selected_ps_id)
-
-    st.markdown("---")
-    st.subheader(f"PS #{ps_data['id']:02d}: {ps_data['title']}")
-    st.write(f"**Domain:** {ps_data['domain']}")
-
-    # Hardware vs. Software conditional UI
-    if ps_data["category"] == "SOFTWARE":
-        st.markdown('<span class="badge-sw">SOFTWARE TRACK</span>', unsafe_allow_html=True)
-        st.info("ℹ️ **There is no hardware or components for this problem statement.**")
-        st.markdown("""
-        Teams choosing this statement will develop pure software solutions (web, mobile, cloud, or ML pipelines). 
-        Evaluation focuses on architecture, algorithm design, user experience, and computational performance.
-        """)
-    else:
-        st.markdown('<span class="badge-hw">HARDWARE TRACK</span>', unsafe_allow_html=True)
-        st.write("#### Expected components list for this problem statement:")
-        
-        for idx, comp in enumerate(ps_data["components"], 1):
-            st.markdown(f"- **{idx}.** {comp}")
-            
-        st.caption("Note: This list represents the expected components required to prototype a functional solution for this problem statement.")
-
-
-# ==============================================================================
-# TAB 3: REGISTRATION & PAYMENT
+# TAB 1: REGISTRATION & PAYMENT
 # ==============================================================================
 with tab_register:
     st.write("### Team Registration & Seat Confirmation")
@@ -497,6 +396,114 @@ with tab_register:
                     st.success(f"🎉 Payment reference `{utr_input}` submitted successfully for Team **{rec['team_name']}**!")
                     st.balloons()
                     st.info("Your registration status has been set to **Pending Verification**. A confirmation email will be dispatched once our settlement reconciles.")
+
+# ==============================================================================
+# TAB 2: PROBLEM STATEMENTS & COMPENDIUM
+# ==============================================================================
+with tab_explore:
+    st.write("### Official Problem Statement Compendium")
+    st.write("Browse all published problem statements across eight technical domains. You can preview the document below or download it directly.")
+
+    # --- Document Preview Section (NEW) ---
+    with st.expander("👁️ Click here to preview the Compendium Document", expanded=False):
+        # We use the raw file URL from your public GitHub repository
+        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statement_Compendium_v2.docx"
+        viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
+        
+        # Renders Google Docs Viewer inside your Streamlit app
+        components.iframe(viewer_url, height=600, scrolling=True)
+    # --------------------------------------
+
+    # Document Download Section
+    st.write("") # small spacing
+    doc_filename = "Problem_Statement_Compendium_v2.docx"
+    if os.path.exists(doc_filename):
+        with open(doc_filename, "rb") as fp:
+            st.download_button(
+                label="⬇️ Download Compendium (.docx)",
+                data=fp,
+                file_name="Problem_Statement_Compendium_v2.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
+            )
+    else:
+        st.button(
+            label="⬇️ Download Compendium (Unavailable)",
+            disabled=True,
+            help=f"File '{doc_filename}' not found in the root directory. Place the document in the repository root to enable downloads.",
+            use_container_width=True
+        )
+
+    st.markdown("---")
+
+    # Filter Controls
+    f_col1, f_col2, f_col3 = st.columns([1.5, 1, 1.5])
+    domains = ["All Domains"] + sorted(list(set(ps["domain"] for ps in PROBLEM_STATEMENTS)))
+    with f_col1:
+        selected_domain = st.selectbox("Filter by Technical Domain", domains)
+    with f_col2:
+        selected_cat = st.selectbox("Category Filter", ["All Categories", "HARDWARE", "SOFTWARE"])
+    with f_col3:
+        search_query = st.text_input("Search Title or Keywords", placeholder="e.g. Flood, Solar, Battery, AI")
+
+    # Filter dataset
+    filtered_list = PROBLEM_STATEMENTS
+    if selected_domain != "All Domains":
+        filtered_list = [ps for ps in filtered_list if ps["domain"] == selected_domain]
+    if selected_cat != "All Categories":
+        filtered_list = [ps for ps in filtered_list if ps["category"] == selected_cat]
+    if search_query:
+        q = search_query.lower()
+        filtered_list = [ps for ps in filtered_list if q in ps["title"].lower() or q in ps["desc"].lower()]
+
+    st.write(f"Showing **{len(filtered_list)}** matching problem statement(s):")
+
+    # Render Statements
+    for ps in filtered_list:
+        with st.expander(f"PS #{ps['id']:02d}: {ps['title']} ({ps['category']})"):
+            c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
+            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>Domain:</b> {ps["domain"]}', unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
+            if ps["category"] == "HARDWARE":
+                st.caption(f"Suggested Components: {', '.join(ps['components'][:4])}...")
+            else:
+                st.caption("No hardware required for this problem statement (Software Track).")
+
+
+# ==============================================================================
+# TAB 3: COMPONENT LIST (HARDWARE INSPECTOR)
+# ==============================================================================
+with tab_components:
+    st.write("### Expected Component List")
+    st.write("Select any problem statement to examine its hardware requirements. For software track problems, no hardware components are required.")
+
+    # Dropdown selector
+    selected_ps_str = st.selectbox("Choose a Problem Statement to inspect:", ps_titles)
+    
+    # Extract ID
+    selected_ps_id = int(selected_ps_str.split(":")[0].replace("PS #", ""))
+    ps_data = next(item for item in PROBLEM_STATEMENTS if item["id"] == selected_ps_id)
+
+    st.markdown("---")
+    st.subheader(f"PS #{ps_data['id']:02d}: {ps_data['title']}")
+    st.write(f"**Domain:** {ps_data['domain']}")
+
+    # Hardware vs. Software conditional UI
+    if ps_data["category"] == "SOFTWARE":
+        st.markdown('<span class="badge-sw">SOFTWARE TRACK</span>', unsafe_allow_html=True)
+        st.info("ℹ️ **There is no hardware or components for this problem statement.**")
+        st.markdown("""
+        Teams choosing this statement will develop pure software solutions (web, mobile, cloud, or ML pipelines). 
+        Evaluation focuses on architecture, algorithm design, user experience, and computational performance.
+        """)
+    else:
+        st.markdown('<span class="badge-hw">HARDWARE TRACK</span>', unsafe_allow_html=True)
+        st.write("#### Expected components list for this problem statement:")
+        
+        for idx, comp in enumerate(ps_data["components"], 1):
+            st.markdown(f"- **{idx}.** {comp}")
+            
+        st.caption("Note: This list represents the expected components required to prototype a functional solution for this problem statement.")
 
 # ==============================================================================
 # FOOTER

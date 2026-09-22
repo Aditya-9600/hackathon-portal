@@ -9,11 +9,11 @@ import datetime
 import os
 
 # ==============================================================================
-# 1. PAGE CONFIGURATION & THEME STYLING
+# 1. PAGE CONFIGURATION & SIH THEME STYLING
 # ==============================================================================
 st.set_page_config(
-    page_title="WCE Hackathon 2026",
-    page_icon="🏛️",
+    page_title="WCE Hackathon 2026 | SIH Theme",
+    page_icon="🇮🇳",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -29,58 +29,133 @@ def navigate_to(page_name, ps_title=None):
     if ps_title:
         st.session_state.selected_ps = ps_title
 
-# Vibrant, High-Contrast Professional CSS
+# SIH-Inspired CSS (Deep Navy, Pure White, and Saffron/Orange Accents)
 st.markdown("""
 <style>
-    /* Hero Banner - WCE Branding (Navy & Saffron) */
-    .hero-banner {
-        background: linear-gradient(135deg, #0A192F 0%, #1E3A8A 100%);
-        border-radius: 12px;
-        padding: 2.5rem 3rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px -5px rgba(30, 58, 138, 0.4);
-        border-bottom: 6px solid #F59E0B;
+    /* Global Background */
+    .stApp {
+        background-color: #F4F6F9 !important;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
+    .stApp p, .stApp span, .stApp label, .stApp div, .stApp h3, .stApp h4 { 
+        color: #1E293B; 
+    }
+
+    /* SIH Hero Banner */
+    .hero-banner {
+        background: linear-gradient(135deg, #05234A 0%, #0A3D85 100%);
+        border-radius: 12px;
+        padding: 3rem 4rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 12px 35px -10px rgba(5, 35, 74, 0.4);
+        border-bottom: 8px solid #FF7A00; /* SIH Saffron/Orange */
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Subtle background pattern for hero */
+    .hero-banner::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
     .hero-banner h1, .hero-banner p, .hero-banner div {
         color: #FFFFFF !important;
+        position: relative;
+        z-index: 2;
     }
     .inst-tag {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(4px);
-        padding: 5px 16px;
-        border-radius: 50px;
-        font-size: 0.85rem;
+        background: #FF7A00;
+        color: #FFFFFF !important;
+        padding: 6px 18px;
+        border-radius: 4px;
+        font-size: 0.9rem;
         font-weight: 700;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
         text-transform: uppercase;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin-bottom: 1.2rem;
+        box-shadow: 0 4px 10px rgba(255, 122, 0, 0.4);
     }
     .hero-title {
-        font-size: 2.8rem; font-weight: 800; line-height: 1.2; margin: 0;
+        font-size: 3rem; font-weight: 900; line-height: 1.2; margin: 0; letter-spacing: -0.5px;
     }
     .hero-sub {
-        font-size: 1.15rem; opacity: 0.9; margin-top: 0.8rem; font-weight: 400;
+        font-size: 1.25rem; opacity: 0.95; margin-top: 1rem; font-weight: 400; max-width: 800px;
+    }
+    
+    /* Problem Statement Expanders (SIH Table style) */
+    [data-testid="stExpander"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+        margin-bottom: 1rem !important;
+        overflow: hidden;
+    }
+    [data-testid="stExpander"] summary {
+        background-color: #FFFFFF !important;
+        padding: 1rem !important;
+        font-weight: 700 !important;
+        color: #05234A !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        background-color: #F8FAFC !important;
     }
     
     /* Badges */
     .badge-hw {
-        background-color: #ECFDF5; color: #047857; padding: 4px 12px;
-        border-radius: 50px; font-weight: 700; font-size: 0.8rem; border: 1px solid #6EE7B7;
+        background-color: #E6F4EA; color: #137333; padding: 5px 14px;
+        border-radius: 4px; font-weight: 700; font-size: 0.85rem; border: 1px solid #CEEAD6;
     }
     .badge-sw {
-        background-color: #EFF6FF; color: #1D4ED8; padding: 4px 12px;
-        border-radius: 50px; font-weight: 700; font-size: 0.8rem; border: 1px solid #93C5FD;
+        background-color: #E8F0FE; color: #1967D2; padding: 5px 14px;
+        border-radius: 4px; font-weight: 700; font-size: 0.85rem; border: 1px solid #D2E3FC;
     }
     
-    /* Global Typography adjustments for readability */
-    h3, h4 { color: #1E3A8A; font-weight: 700; }
+    /* Secondary/Back Buttons */
+    .stButton>button {
+        border-radius: 6px; font-weight: 600; padding: 0.6rem 1.5rem;
+        border: 1px solid #CBD5E1; color: #334155; transition: all 0.2s;
+    }
+    
+    /* Primary "Register Now" SIH Buttons */
+    .stButton>button[kind="primary"] {
+        background: linear-gradient(135deg, #FF7A00 0%, #E65C00 100%) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        padding: 0.75rem 2rem;
+        box-shadow: 0 6px 15px rgba(255, 122, 0, 0.3) !important;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    .stButton>button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #E65C00 0%, #CC5200 100%) !important;
+        box-shadow: 0 8px 20px rgba(255, 122, 0, 0.4) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Inputs & Form Elements */
+    .stTextInput input, .stTextArea textarea, .stSelectbox [data-baseweb="select"] {
+        background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important;
+        border-radius: 6px !important; color: #0F172A !important; padding: 0.6rem !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #05234A !important; box-shadow: 0 0 0 2px rgba(5, 35, 74, 0.15) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. OFFICIAL DATABASE
+# 2. OFFICIAL DATABASE (ALL 69 STATEMENTS, NO PRICING)
 # ==============================================================================
 PROBLEM_STATEMENTS = [
     # DOMAIN 01: Smart Cities & Urbanization
@@ -310,20 +385,19 @@ PROBLEM_STATEMENTS = [
 ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
 # ==============================================================================
-# VIEW 1: HOME PAGE (STATEMENTS & COMPENDIUM)
+# VIEW 1: HOME PAGE (SIH THEME LISTING)
 # ==============================================================================
 if st.session_state.page == 'home':
     st.markdown("""
     <div class="hero-banner">
-        <div class="inst-tag">Walchand College of Engineering, Sangli • Estd. 1947</div>
-        <div class="hero-title">⚡ WCE National Hackathon 2026</div>
-        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware & Team Registrations.</div>
+        <div class="inst-tag">Smart India Hackathon 2026 Initiative</div>
+        <div class="hero-title">WCE National Hackathon 2026</div>
+        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware Specifications, and Team Registration. Hosted by Walchand College of Engineering.</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.subheader("Official Problem Statement Compendium")
-    st.write("Browse all 69 engineering challenges. Explore expected components and register your team directly.")
-
+    
     # Compendium Preview / Download
     doc_filename = "Problem_Statements_Updated.docx"
     with st.expander("👁️ Click here to Preview the Official Compendium Document", expanded=False):
@@ -359,32 +433,37 @@ if st.session_state.page == 'home':
 
     st.write(f"Showing **{len(filtered_list)}** problem statement(s):")
 
-    # Interactive Problem Statement List
+    # Interactive Problem Statement List (SIH Table style)
     for ps in filtered_list:
-        with st.container(border=True):
+        with st.expander(f"PS #{ps['id']:02d}: {ps['title']}"):
             c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
-            st.markdown(f"#### PS #{ps['id']:02d}: {ps['title']}")
-            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>{ps["domain"]}</b>', unsafe_allow_html=True)
-            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
+            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b style="color:#1E3A8A;">{ps["domain"]}</b>', unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-top: 15px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
             
-            # Sub-expander for Components
-            with st.expander("📦 View Expected Hardware Components"):
-                if ps["category"] == "SOFTWARE":
-                    st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
-                else:
-                    st.write("Expected prototyping hardware required for functional demonstration:")
-                    col_c1, col_c2 = st.columns(2)
-                    mid_pt = (len(ps['components']) + 1) // 2
-                    with col_c1:
-                        for comp in ps['components'][:mid_pt]:
-                            st.markdown(f"🔹 {comp}")
-                    with col_c2:
-                        for comp in ps['components'][mid_pt:]:
-                            st.markdown(f"🔹 {comp}")
+            st.markdown("---")
+            if ps["category"] == "SOFTWARE":
+                st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
+            else:
+                st.markdown("#### 📦 Expected Hardware Components:")
+                col_c1, col_c2 = st.columns(2)
+                mid_pt = (len(ps['components']) + 1) // 2
+                with col_c1:
+                    for comp in ps['components'][:mid_pt]:
+                        st.markdown(f"🔹 {comp}")
+                with col_c2:
+                    for comp in ps['components'][mid_pt:]:
+                        st.markdown(f"🔹 {comp}")
 
-            # Registration transition button
+            # Register Now Button placed directly underneath the components
+            st.markdown("<br>", unsafe_allow_html=True)
             ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
-            st.button(f"📝 Register for PS #{ps['id']:02d}", key=f"btn_{ps['id']}", on_click=navigate_to, args=('registration', ps_formatted_title))
+            st.button(
+                f"Register Now for PS #{ps['id']:02d}", 
+                type="primary", 
+                key=f"btn_reg_{ps['id']}", 
+                on_click=navigate_to, 
+                args=('registration', ps_formatted_title)
+            )
 
 # ==============================================================================
 # VIEW 2: REGISTRATION & PAYMENT
@@ -396,7 +475,6 @@ elif st.session_state.page == 'registration':
     st.write("Complete the details below to register your team. **All 5 team members are compulsory**.")
     st.info("💳 **Registration Fee: ₹350 per team**")
 
-    # If the user clicked "Register" on a specific PS, we pre-fill it here
     default_ps_index = 0
     if st.session_state.selected_ps in ps_titles:
         default_ps_index = ps_titles.index(st.session_state.selected_ps)
@@ -444,7 +522,7 @@ elif st.session_state.page == 'registration':
             cat_misc = st.text_input("Misc / Passives / Wiring")
 
         st.markdown("---")
-        submit_btn = st.form_submit_button("Proceed to Payment Checkout (₹350)")
+        submit_btn = st.form_submit_button("Proceed to Payment Checkout (₹350)", type="primary")
 
     if submit_btn:
         if not team_name.strip():
@@ -489,7 +567,7 @@ elif st.session_state.page == 'registration':
             qr = qrcode.QRCode(version=1, box_size=8, border=3)
             qr.add_data(upi_string)
             qr.make(fit=True)
-            img = qr.make_image(fill_color="#0F172A", back_color="white")
+            img = qr.make_image(fill_color="#05234A", back_color="white")
 
             buf = BytesIO()
             img.save(buf, format="PNG")
@@ -510,7 +588,7 @@ elif st.session_state.page == 'registration':
 
         with st.form("utr_verification_form"):
             utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number *", max_chars=12, placeholder="12 numeric digits")
-            submit_utr = st.form_submit_button("Submit UTR & Finalize Registration")
+            submit_utr = st.form_submit_button("Submit UTR & Finalize Registration", type="primary")
 
             if submit_utr:
                 if not utr_input.isdigit() or len(utr_input) != 12:
@@ -521,7 +599,6 @@ elif st.session_state.page == 'registration':
                         payload['utr'] = utr_input
                         
                         # ⚠️ CRITICAL: Replace the placeholder below with your GOOGLE APPS SCRIPT WEBHOOK URL.
-                        # Do NOT put your standard 'docs.google.com/spreadsheets/...' link here. It will fail.
                         webhook_url = "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_WEBHOOK_URL_HERE/exec"
                         
                         try:

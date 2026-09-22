@@ -278,7 +278,7 @@ with tab_explore:
 
     # --- Document Preview Section ---
     with st.expander("👁️ Click here to preview the Compendium Document", expanded=False):
-        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statement_Compendium_v2.docx"
+        github_raw_url = "https://github.com/Aditya-9600/hackathon-portal/raw/main/Problem_Statements_Updated.docx"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
         components.iframe(viewer_url, height=600, scrolling=True)
 

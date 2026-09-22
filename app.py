@@ -9,98 +9,78 @@ import datetime
 import os
 
 # ==============================================================================
-# 1. PAGE CONFIGURATION & THEME STYLING (WCE ENTERPRISE THEME)
+# 1. PAGE CONFIGURATION & THEME STYLING
 # ==============================================================================
 st.set_page_config(
-    page_title="Hackathon 2026 | Walchand College of Engineering, Sangli",
+    page_title="WCE Hackathon 2026",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
+# Initialize Session State for Navigation
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
+if 'selected_ps' not in st.session_state:
+    st.session_state.selected_ps = None
+
+def navigate_to(page_name, ps_title=None):
+    st.session_state.page = page_name
+    if ps_title:
+        st.session_state.selected_ps = ps_title
+
+# Vibrant, High-Contrast Professional CSS
 st.markdown("""
 <style>
-    /* Global App Background & Typography */
-    .stApp {
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .stApp p, .stApp span, .stApp label, .stApp div { color: #1E293B; }
-
-    /* Header Banner - SIH & Autonomous Engineering Institute Aesthetic */
+    /* Hero Banner - WCE Branding (Navy & Saffron) */
     .hero-banner {
-        background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #2563EB 100%);
-        border-radius: 16px;
-        padding: 2.2rem 2.5rem;
+        background: linear-gradient(135deg, #0A192F 0%, #1E3A8A 100%);
+        border-radius: 12px;
+        padding: 2.5rem 3rem;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
-        color: #FFFFFF !important;
-        border-bottom: 5px solid #F59E0B;
+        box-shadow: 0 10px 30px -5px rgba(30, 58, 138, 0.4);
+        border-bottom: 6px solid #F59E0B;
     }
-    .hero-banner * { color: #FFFFFF !important; }
+    .hero-banner h1, .hero-banner p, .hero-banner div {
+        color: #FFFFFF !important;
+    }
     .inst-tag {
         display: inline-block;
         background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(8px);
-        padding: 4px 14px;
-        border-radius: 9999px;
-        font-size: 0.82rem;
+        backdrop-filter: blur(4px);
+        padding: 5px 16px;
+        border-radius: 50px;
+        font-size: 0.85rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 1px;
         text-transform: uppercase;
-        margin-bottom: 0.8rem;
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
     .hero-title {
-        font-size: 2.3rem; font-weight: 800; line-height: 1.2; margin: 0.2rem 0; letter-spacing: -0.02em;
+        font-size: 2.8rem; font-weight: 800; line-height: 1.2; margin: 0;
     }
     .hero-sub {
-        font-size: 1.05rem; opacity: 0.9; margin-top: 0.4rem; font-weight: 400;
+        font-size: 1.15rem; opacity: 0.9; margin-top: 0.8rem; font-weight: 400;
     }
-
-    /* Cards & Badges */
+    
+    /* Badges */
     .badge-hw {
-        background-color: #DCFCE7; color: #15803D !important; padding: 4px 12px;
-        border-radius: 9999px; font-weight: 700; font-size: 0.8rem; border: 1px solid #86EFAC;
+        background-color: #ECFDF5; color: #047857; padding: 4px 12px;
+        border-radius: 50px; font-weight: 700; font-size: 0.8rem; border: 1px solid #6EE7B7;
     }
     .badge-sw {
-        background-color: #EFF6FF; color: #1D4ED8 !important; padding: 4px 12px;
-        border-radius: 9999px; font-weight: 700; font-size: 0.8rem; border: 1px solid #93C5FD;
+        background-color: #EFF6FF; color: #1D4ED8; padding: 4px 12px;
+        border-radius: 50px; font-weight: 700; font-size: 0.8rem; border: 1px solid #93C5FD;
     }
-
-    /* Streamlit Tabs Customization */
-    .stTabs [data-baseweb="tab-list"] { gap: 12px; border-bottom: 2px solid #E2E8F0; padding-bottom: 4px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #FFFFFF; border-radius: 8px 8px 0 0; padding: 10px 22px;
-        font-weight: 600; color: #475569 !important; border: 1px solid #E2E8F0; border-bottom: none;
-    }
-    .stTabs [aria-selected="true"] { background: #1E3A8A !important; color: #FFFFFF !important; border-color: #1E3A8A !important; }
-
-    /* Primary Action Buttons */
-    .stButton>button {
-        background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%) !important;
-        color: #FFFFFF !important; border: none; border-radius: 8px; font-weight: 600;
-        padding: 0.6rem 1.4rem; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
-    }
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%) !important;
-        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
-    }
-
-    /* Inputs & Form Elements */
-    .stTextInput input, .stTextArea textarea, .stSelectbox [data-baseweb="select"] {
-        background-color: #FFFFFF !important; border: 1.5px solid #CBD5E1 !important;
-        border-radius: 8px !important; color: #0F172A !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #2563EB !important; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
-    }
+    
+    /* Global Typography adjustments for readability */
+    h3, h4 { color: #1E3A8A; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. OFFICIAL DATABASE: PROBLEM STATEMENTS & HARDWARE SOLUTIONS (NO COSTING)
+# 2. OFFICIAL DATABASE
 # ==============================================================================
 PROBLEM_STATEMENTS = [
     # DOMAIN 01: Smart Cities & Urbanization
@@ -330,60 +310,35 @@ PROBLEM_STATEMENTS = [
 ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
 # ==============================================================================
-# 3. EXECUTIVE HERO BANNER (WCE SANGLI BRANDING)
+# VIEW 1: HOME PAGE (STATEMENTS & COMPENDIUM)
 # ==============================================================================
-st.markdown("""
-<div class="hero-banner">
-    <div class="inst-tag">Walchand College of Engineering, Sangli • Autonomous Institute Estd. 1947</div>
-    <div class="hero-title">⚡ WCE National Technical Hackathon 2026</div>
-    <div class="hero-sub">Official Portal for Problem Statement Compendium, Prototyping Hardware Specifications & Team Registrations.</div>
-</div>
-""", unsafe_allow_html=True)
+if st.session_state.page == 'home':
+    st.markdown("""
+    <div class="hero-banner">
+        <div class="inst-tag">Walchand College of Engineering, Sangli • Estd. 1947</div>
+        <div class="hero-title">⚡ WCE National Hackathon 2026</div>
+        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware & Team Registrations.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# TABS ORDER
-tab_explore, tab_components, tab_register = st.tabs([
-    "🔍 1. Problem Statements & Compendium",
-    "📦 2. Expected Component List",
-    "📝 3. Team Registration & Payment"
-])
-
-# ==============================================================================
-# TAB 1: PROBLEM STATEMENTS & COMPENDIUM PREVIEW / DOWNLOAD
-# ==============================================================================
-with tab_explore:
     st.subheader("Official Problem Statement Compendium")
-    st.write("Browse all 69 engineering challenges across 8 cutting-edge tracks. Download or live preview the official compendium document below:")
+    st.write("Browse all 69 engineering challenges. Explore expected components and register your team directly.")
 
-    # Hardcoded to only read the updated document name
+    # Compendium Preview / Download
     doc_filename = "Problem_Statements_Updated.docx"
-
-    with st.expander("👁️ Click here to Preview the Compendium Document", expanded=False):
+    with st.expander("👁️ Click here to Preview the Official Compendium Document", expanded=False):
         encoded_doc_name = urllib.parse.quote(doc_filename)
         github_raw_url = f"https://github.com/Aditya-9600/hackathon-portal/raw/main/{encoded_doc_name}"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
         components.iframe(viewer_url, height=580, scrolling=True)
 
-    col_btn1, col_btn2 = st.columns([1, 3])
-    with col_btn1:
-        if os.path.exists(doc_filename):
-            with open(doc_filename, "rb") as fp:
-                st.download_button(
-                    label="⬇️ Download Document (.docx)",
-                    data=fp,
-                    file_name=doc_filename,
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True
-                )
-        else:
-            st.button(
-                label="⬇️ Download Document (Unavailable)",
-                disabled=True,
-                help=f"File '{doc_filename}' not found in the root directory. Place the file in GitHub to enable.",
-                use_container_width=True
-            )
+    if os.path.exists(doc_filename):
+        with open(doc_filename, "rb") as fp:
+            st.download_button("⬇️ Download Document (.docx)", data=fp, file_name=doc_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
     st.markdown("---")
-
+    
+    # Filter UI
     f_col1, f_col2, f_col3 = st.columns([1.5, 1, 1.5])
     domains = ["All Domains"] + sorted(list(set(ps["domain"] for ps in PROBLEM_STATEMENTS)))
     with f_col1:
@@ -391,7 +346,7 @@ with tab_explore:
     with f_col2:
         selected_cat = st.selectbox("Category", ["All Categories", "HARDWARE", "SOFTWARE"])
     with f_col3:
-        search_query = st.text_input("Search Keyword or Title", placeholder="e.g. EV, Solar, Drone, AI, Water")
+        search_query = st.text_input("Search Keyword or Title", placeholder="e.g. EV, Solar, Drone")
 
     filtered_list = PROBLEM_STATEMENTS
     if selected_domain != "All Domains":
@@ -404,60 +359,47 @@ with tab_explore:
 
     st.write(f"Showing **{len(filtered_list)}** problem statement(s):")
 
+    # Interactive Problem Statement List
     for ps in filtered_list:
-        with st.expander(f"PS #{ps['id']:02d}: {ps['title']} ({ps['category']})"):
+        with st.container(border=True):
             c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
-            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>Domain:</b> {ps["domain"]}', unsafe_allow_html=True)
-            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem; line-height: 1.6;'>{ps['desc']}</p>", unsafe_allow_html=True)
-            if ps["category"] == "HARDWARE":
-                st.caption(f"Hardware Preview: {', '.join(ps['components'][:3])}...")
-            else:
-                st.caption("Pure Software Track: Web / Mobile / Cloud / ML.")
+            st.markdown(f"#### PS #{ps['id']:02d}: {ps['title']}")
+            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b>{ps["domain"]}</b>', unsafe_allow_html=True)
+            st.markdown(f"<p style='margin-top: 10px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
+            
+            # Sub-expander for Components
+            with st.expander("📦 View Expected Hardware Components"):
+                if ps["category"] == "SOFTWARE":
+                    st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
+                else:
+                    st.write("Expected prototyping hardware required for functional demonstration:")
+                    col_c1, col_c2 = st.columns(2)
+                    mid_pt = (len(ps['components']) + 1) // 2
+                    with col_c1:
+                        for comp in ps['components'][:mid_pt]:
+                            st.markdown(f"🔹 {comp}")
+                    with col_c2:
+                        for comp in ps['components'][mid_pt:]:
+                            st.markdown(f"🔹 {comp}")
 
-
-# ==============================================================================
-# TAB 2: EXPECTED COMPONENT LIST
-# ==============================================================================
-with tab_components:
-    st.subheader("Expected Component List Inspector")
-    st.write("Examine the complete prototyping kit specified for each problem statement. All pricing information has been removed.")
-
-    selected_ps_str = st.selectbox("Select a Problem Statement to Inspect:", ps_titles)
-    selected_ps_id = int(selected_ps_str.split(":")[0].replace("PS #", ""))
-    ps_data = next(item for item in PROBLEM_STATEMENTS if item["id"] == selected_ps_id)
-
-    st.markdown("---")
-    st.markdown(f"### PS #{ps_data['id']:02d}: {ps_data['title']}")
-    st.markdown(f"**Track Domain:** {ps_data['domain']}")
-
-    if ps_data["category"] == "SOFTWARE":
-        st.markdown('<span class="badge-sw">SOFTWARE TRACK</span>', unsafe_allow_html=True)
-        st.info("ℹ️ **There is no hardware or components for this problem statement.**")
-        st.write("Teams selecting this challenge will develop algorithmic, cloud, mobile, or analytical software solutions. Prototype evaluation will be based purely on software architecture, code quality, UI/UX, and performance benchmarks.")
-    else:
-        st.markdown('<span class="badge-hw">HARDWARE TRACK</span>', unsafe_allow_html=True)
-        st.markdown("#### Expected components list for this problem statement:")
-        
-        col_c1, col_c2 = st.columns(2)
-        mid_pt = (len(ps_data["components"]) + 1) // 2
-        
-        with col_c1:
-            for comp in ps_data["components"][:mid_pt]:
-                st.markdown(f"🔹 **{comp}**")
-        with col_c2:
-            for comp in ps_data["components"][mid_pt:]:
-                st.markdown(f"🔹 **{comp}**")
-
-        st.caption("Note: This list represents the expected prototyping hardware required for functional demonstration during the hackathon.")
-
+            # Registration transition button
+            ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
+            st.button(f"📝 Register for PS #{ps['id']:02d}", key=f"btn_{ps['id']}", on_click=navigate_to, args=('registration', ps_formatted_title))
 
 # ==============================================================================
-# TAB 3: TEAM REGISTRATION & PAYMENT (5 COMPULSORY + LEADER EMAIL)
+# VIEW 2: REGISTRATION & PAYMENT
 # ==============================================================================
-with tab_register:
-    st.subheader("Team Registration & Seat Confirmation")
+elif st.session_state.page == 'registration':
+    st.button("⬅️ Back to Problem Statements", on_click=navigate_to, args=('home',))
+    
+    st.subheader("Team Registration & Checkout")
     st.write("Complete the details below to register your team. **All 5 team members are compulsory**.")
     st.info("💳 **Registration Fee: ₹350 per team**")
+
+    # If the user clicked "Register" on a specific PS, we pre-fill it here
+    default_ps_index = 0
+    if st.session_state.selected_ps in ps_titles:
+        default_ps_index = ps_titles.index(st.session_state.selected_ps)
 
     with st.form("team_registration_form"):
         st.markdown("#### 1. Team Profile")
@@ -465,31 +407,27 @@ with tab_register:
         with col_t1:
             team_name = st.text_input("Team Name *", placeholder="e.g. Walchand Innovators")
         with col_t2:
-            assigned_ps = st.selectbox("Allocated Problem Statement *", ps_titles)
+            assigned_ps = st.selectbox("Allocated Problem Statement *", ps_titles, index=default_ps_index)
 
         st.markdown("---")
-        st.markdown("#### 2. Core Members (All Compulsory)")
+        st.markdown("#### 2. Core Members (All 5 Compulsory)")
         
         st.markdown("**Member 1 (Team Leader)**")
         col_m1a, col_m1b, col_m1c = st.columns(3)
         with col_m1a:
-            leader_name = st.text_input("Leader Full Name *", placeholder="Enter Leader's Full Name")
+            leader_name = st.text_input("Leader Full Name *")
         with col_m1b:
-            leader_email = st.text_input("Leader Email *", placeholder="leader@college.edu")
+            leader_email = st.text_input("Leader Email *")
         with col_m1c:
-            leader_phone = st.text_input("Leader Phone Number *", placeholder="10-digit mobile number")
+            leader_phone = st.text_input("Leader Phone Number *")
 
-        st.markdown("**Member 2**")
-        m2_name = st.text_input("Member 2 Full Name *", placeholder="Enter Member 2 Full Name")
-
-        st.markdown("**Member 3**")
-        m3_name = st.text_input("Member 3 Full Name *", placeholder="Enter Member 3 Full Name")
-
-        st.markdown("**Member 4**")
-        m4_name = st.text_input("Member 4 Full Name *", placeholder="Enter Member 4 Full Name")
-        
-        st.markdown("**Member 5**")
-        m5_name = st.text_input("Member 5 Full Name *", placeholder="Enter Member 5 Full Name")
+        col_m2, col_m3 = st.columns(2)
+        with col_m2:
+            m2_name = st.text_input("Member 2 Full Name *")
+            m4_name = st.text_input("Member 4 Full Name *")
+        with col_m3:
+            m3_name = st.text_input("Member 3 Full Name *")
+            m5_name = st.text_input("Member 5 Full Name *")
 
         st.markdown("---")
         st.markdown("#### 3. Custom Component Requests (Optional)")
@@ -497,25 +435,24 @@ with tab_register:
 
         cat_col1, cat_col2 = st.columns(2)
         with cat_col1:
-            cat_boards = st.text_input("Microcontrollers & Boards", placeholder="e.g. Arduino Nano, Raspberry Pi Pico")
-            cat_sensors = st.text_input("Sensors & Modules", placeholder="e.g. Ultrasonic JSN-SR04T, GPS, MQ-135")
-            cat_power = st.text_input("Power & Batteries", placeholder="e.g. 12V 5A SMPS, 3.7V LiPo 1200mAh")
+            cat_boards = st.text_input("Microcontrollers & Boards")
+            cat_sensors = st.text_input("Sensors & Modules")
+            cat_power = st.text_input("Power & Batteries")
         with cat_col2:
-            cat_motors = st.text_input("Motors, Relays & Actuators", placeholder="e.g. NEMA 17 Stepper, 4-Channel Relay")
-            cat_displays = st.text_input("Displays & Indicators", placeholder="e.g. 20x4 I2C LCD, 0.96 OLED")
-            cat_misc = st.text_input("Misc / Passives / Wiring", placeholder="e.g. High-Gauge Wires, Breadboards")
+            cat_motors = st.text_input("Motors, Relays & Actuators")
+            cat_displays = st.text_input("Displays & Indicators")
+            cat_misc = st.text_input("Misc / Passives / Wiring")
 
         st.markdown("---")
         submit_btn = st.form_submit_button("Proceed to Payment Checkout (₹350)")
 
-    # Form Submission Logic
     if submit_btn:
         if not team_name.strip():
             st.error("⚠️ Team Name is required.")
         elif not leader_name.strip() or not leader_email.strip() or not leader_phone.strip():
             st.error("⚠️ Team Leader Name, Email, and Phone Number are all compulsory.")
         elif not m2_name.strip() or not m3_name.strip() or not m4_name.strip() or not m5_name.strip():
-            st.error("⚠️ All 5 team member names are compulsory. Please ensure Members 2 through 5 are filled.")
+            st.error("⚠️ All 5 team member names are compulsory.")
         else:
             hardware_summary = f"""Boards: {cat_boards.strip() or 'None'} | Sensors: {cat_sensors.strip() or 'None'} | Power: {cat_power.strip() or 'None'} | Actuators: {cat_motors.strip() or 'None'} | Displays: {cat_displays.strip() or 'None'} | Misc: {cat_misc.strip() or 'None'}"""
             
@@ -545,7 +482,6 @@ with tab_register:
 
         col_pay1, col_pay2 = st.columns([1, 1.5])
         with col_pay1:
-            # Generate UPI Payload with updated UPI ID
             upi_id = "9322753587@ptyes"  
             payee_name = "WCE Hackathon 2026"
             upi_string = f"upi://pay?pa={upi_id}&pn={urllib.parse.quote(payee_name)}&am=350.00&cu=INR&tn={rec['order_id']}"
@@ -572,7 +508,6 @@ with tab_register:
             3. Copy the **12-digit UTR / UPI Transaction Reference Number** from your payment receipt and enter it below.
             """)
 
-        # UTR Verification & Google Sheets Sync Form
         with st.form("utr_verification_form"):
             utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number *", max_chars=12, placeholder="12 numeric digits")
             submit_utr = st.form_submit_button("Submit UTR & Finalize Registration")
@@ -585,8 +520,9 @@ with tab_register:
                         payload = rec.copy()
                         payload['utr'] = utr_input
                         
-                        # Replace with your deployed Google Apps Script URL
-                        webhook_url = "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_URL_HERE/exec"
+                        # ⚠️ CRITICAL: Replace the placeholder below with your GOOGLE APPS SCRIPT WEBHOOK URL.
+                        # Do NOT put your standard 'docs.google.com/spreadsheets/...' link here. It will fail.
+                        webhook_url = "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_WEBHOOK_URL_HERE/exec"
                         
                         try:
                             res = requests.post(webhook_url, json=payload, timeout=10)
@@ -598,7 +534,7 @@ with tab_register:
                             else:
                                 st.error("Database sync failed. Please verify your internet connection or resubmit.")
                         except Exception as e:
-                            st.warning(f"Registration recorded locally. Backend sync notice: {e}")
+                            st.error("Webhook Error: Did you paste your Apps Script Deployment URL into the code? You cannot use the standard docs.google.com link here.")
 
 # ==============================================================================
 # FOOTER

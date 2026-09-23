@@ -31,154 +31,201 @@ if 'ps_locked' not in st.session_state:
 def navigate_to(page_name, ps_title=None):
     st.session_state.page = page_name
     if page_name == 'home':
-        # Unlock the dropdown if they go back home to choose a different PS
         st.session_state.ps_locked = False
-        
     if ps_title:
         st.session_state.selected_ps = ps_title
-        # Lock the dropdown because they came from a specific "Register Now" button
         st.session_state.ps_locked = True
-        
     st.session_state.active_ps = None 
 
 # ==============================================================================
-# 2. THEME STYLING (ANIMATIONS & CUSTOM COMPONENTS)
+# 2. AGGRESSIVE CUSTOM CSS (OVERRIDING STREAMLIT NATIVE DOM)
 # ==============================================================================
 st.markdown("""
 <style>
-    /* HIDE STREAMLIT & GITHUB ICONS (Security/Clean UI) */
+    /* Import Premium Web Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+
+    /* Nuke Streamlit Defaults */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .viewerBadge_container__1QSob {display: none !important;}
     .stDeployButton {display:none !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-
-    /* Lightweight Tech Background */
-    .stApp {
-        background-color: #F0F4F8 !important;
-        background-image: radial-gradient(#CBD5E1 1px, transparent 1px) !important;
-        background-size: 25px 25px !important;
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
     
-    /* Ensure Native Text is Dark for Readability */
-    .stApp p, .stApp span, .stApp label, .stApp div, .stApp h3, .stApp h4 { 
-        color: #0F172A; 
+    /* Remove top padding to mimic a real website header */
+    .block-container {
+        padding-top: 0rem !important;
+        padding-bottom: 5rem !important;
+        max-width: 1200px !important;
     }
 
-    /* Animated Hero Banner with Accent */
-    @keyframes gradientPan {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    /* Global Body Styling */
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif !important;
     }
-    .hero-banner {
-        background: linear-gradient(-45deg, #05234A, #0A3D85, #001233, #082F66);
-        background-size: 400% 400%;
-        animation: gradientPan 12s ease infinite;
-        border-radius: 12px;
-        padding: 3rem 4rem;
-        margin-bottom: 2.5rem;
-        box-shadow: 0 15px 35px -10px rgba(5, 35, 74, 0.5);
-        border-bottom: 6px solid;
-        border-image: linear-gradient(to right, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #138808 66%) 1;
+    .stApp {
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
+    }
+    p, span, label, div, h1, h2, h3, h4, li { color: #1E293B; }
+
+    /* ================= WCE DISCOVERY HERO BANNER ================= */
+    .discovery-hero {
+        background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+        border: 1px solid #E2E8F0;
+        border-radius: 0 0 24px 24px;
+        padding: 4rem 3rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        text-align: center;
         position: relative;
     }
-    .hero-banner h1, .hero-banner p, .hero-banner div {
-        color: #FFFFFF !important;
+    .discovery-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 6px;
+        background: linear-gradient(90deg, #2563EB, #06B6D4, #2563EB);
     }
-    .inst-tag {
-        display: inline-block;
-        background: #FF9933; 
-        color: #FFFFFF !important;
-        padding: 6px 18px;
-        border-radius: 4px;
-        font-size: 0.9rem;
+    .hero-tag {
+        color: #2563EB;
         font-weight: 700;
-        letter-spacing: 1.5px;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4);
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        display: block;
     }
     .hero-title {
-        font-size: 3.2rem; font-weight: 900; line-height: 1.2; margin: 0; letter-spacing: -0.5px;
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.03em;
     }
     .hero-sub {
-        font-size: 1.25rem; opacity: 0.95; margin-top: 1rem; font-weight: 400; max-width: 800px;
+        font-size: 1.15rem;
+        color: #64748B;
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
     }
-    
-    /* Category Badges (Hardware/Software) */
+
+    /* ================= FLOATING WEB CARDS (For Problem Statements) ================= */
+    /* Target Streamlit's container borders to act like web cards */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+        border-color: #BFDBFE !important;
+    }
+
+    /* ================= BADGES & TAGS ================= */
     .badge-hw {
-        background-color: #E6F4EA; color: #137333 !important; padding: 6px 16px;
-        border-radius: 50px; font-weight: 800; font-size: 0.85rem; border: 1px solid #CEEAD6;
-        display: inline-block; text-align: center;
+        background-color: #ECFDF5;
+        color: #059669 !important;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: 1px solid #A7F3D0;
+        display: inline-block;
     }
     .badge-sw {
-        background-color: #E8F0FE; color: #1967D2 !important; padding: 6px 16px;
-        border-radius: 50px; font-weight: 800; font-size: 0.85rem; border: 1px solid #D2E3FC;
-        display: inline-block; text-align: center;
+        background-color: #EFF6FF;
+        color: #2563EB !important;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: 1px solid #BFDBFE;
+        display: inline-block;
     }
 
-    /* Download Button - Highly Visible Vibrant Blue Gradient */
-    [data-testid="stDownloadButton"] button {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%) !important;
-        border: none !important;
-        border-radius: 6px !important;
-        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3) !important;
-        padding: 0.6rem 1.5rem !important;
-    }
-    [data-testid="stDownloadButton"] button p {
-        color: #FFFFFF !important; /* Forces text to be white */
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-        margin: 0 !important;
-    }
-    [data-testid="stDownloadButton"] button:hover {
-        box-shadow: 0 6px 15px rgba(30, 58, 138, 0.5) !important;
-        transform: translateY(-1px);
-    }
-
-    /* Pulsating Primary Buttons (Register Now) */
-    @keyframes pulse-btn {
-        0% { box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4); }
-        50% { box-shadow: 0 8px 20px rgba(255, 153, 51, 0.7); }
-        100% { box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4); }
-    }
+    /* ================= BUTTONS (Web-App Style) ================= */
+    /* Primary "Register Now" Button */
     .stButton>button[kind="primary"] {
-        background: linear-gradient(135deg, #FF9933 0%, #E67E22 100%) !important;
+        background: #2563EB !important;
         color: #FFFFFF !important;
         border: none !important;
-        border-radius: 6px;
-        font-weight: 800;
-        font-size: 1.1rem;
-        padding: 0.8rem 2rem;
-        animation: pulse-btn 2.5s infinite;
-        transition: transform 0.2s;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        padding: 0.75rem 2rem;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4) !important;
+        transition: all 0.2s ease;
+        width: 100%;
     }
     .stButton>button[kind="primary"]:hover {
+        background: #1D4ED8 !important;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.5) !important;
         transform: translateY(-2px);
     }
-
-    /* Standard Buttons (Back Button, Accordion Toggles) */
+    /* Secondary Action Buttons (View Details) */
     .stButton>button[kind="secondary"] {
         background: #F8FAFC !important;
         border: 1px solid #CBD5E1 !important;
-        color: #05234A !important;
-        font-weight: 700;
+        color: #334155 !important;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
     }
     .stButton>button[kind="secondary"]:hover {
         background: #F1F5F9 !important;
-        border-color: #05234A !important;
+        border-color: #94A3B8 !important;
+        color: #0F172A !important;
     }
 
-    /* Forms & Inputs */
-    .stTextInput input, .stTextArea textarea, .stSelectbox [data-baseweb="select"] {
-        background-color: #FFFFFF !important; border: 1.5px solid #CBD5E1 !important;
-        border-radius: 8px !important; color: #0F172A !important; padding: 0.6rem !important;
+    /* Download Button Override */
+    [data-testid="stDownloadButton"] button {
+        background: #0F172A !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.5rem !important;
     }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #05234A !important; box-shadow: 0 0 0 2px rgba(5, 35, 74, 0.15) !important;
+    [data-testid="stDownloadButton"] button p {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }
+
+    /* ================= FORMS & INPUTS ================= */
+    .stTextInput input, .stTextArea textarea, .stSelectbox [data-baseweb="select"] {
+        background-color: #F8FAFC !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        color: #0F172A !important;
+        padding: 0.75rem !important;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .stTextInput input:focus, .stSelectbox [data-baseweb="select"]:focus-within {
+        background-color: #FFFFFF !important;
+        border-color: #3B82F6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* ================= ALERTS & DISCLAIMERS ================= */
+    .hardware-disclaimer {
+        background: #FEF2F2;
+        border: 1px solid #FCA5A5;
+        border-left: 6px solid #DC2626;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    .hardware-disclaimer h4 {
+        color: #991B1B !important; margin-top: 0; font-weight: 700; font-size: 1.1rem;
+    }
+    .hardware-disclaimer p {
+        color: #7F1D1D !important; margin-bottom: 0; font-size: 0.95rem; line-height: 1.6;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -415,72 +462,70 @@ ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
 
 # ==============================================================================
-# VIEW 1: HOME PAGE (LISTING WITH EXCLUSIVE ACCORDIONS)
+# VIEW 1: HOME PAGE (WEB-APP DISCOVERY THEME)
 # ==============================================================================
 if st.session_state.page == 'home':
     st.markdown("""
-    <div class="hero-banner">
-        <div class="inst-tag">Organized by Department of Electrical Engineering</div>
-        <div class="hero-title">WCE National Technical Hackathon 2026</div>
-        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware Specifications, and Team Registration. Hosted by Walchand College of Engineering, Sangli.</div>
+    <div class="discovery-hero">
+        <span class="hero-tag">Department of Electrical Engineering</span>
+        <h1 class="hero-title">WCE National Technical<br>Hackathon 2026</h1>
+        <p class="hero-sub">The official discovery platform for Problem Statements, Expected Prototyping Hardware, and Team Registrations. Hosted at Walchand College of Engineering, Sangli.</p>
     </div>
     """, unsafe_allow_html=True)
 
     # Document Preview & Download
     doc_filename = "Problem_Statements_Updated.docx"
-    with st.expander("👁️ Click here to Preview the Official Compendium Document", expanded=False):
+    with st.expander("📄 View Official Compendium Document (PDF/Docx)", expanded=False):
         encoded_doc_name = urllib.parse.quote(doc_filename)
         github_raw_url = f"https://github.com/Aditya-9600/hackathon-portal/raw/main/{encoded_doc_name}"
         viewer_url = f"https://docs.google.com/viewer?url={github_raw_url}&embedded=true"
-        components.iframe(viewer_url, height=580, scrolling=True)
+        components.iframe(viewer_url, height=600, scrolling=True)
 
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
-            st.download_button("⬇️ Download Compendium (.docx)", data=fp, file_name=doc_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            st.download_button("Download Full Compendium (.docx)", data=fp, file_name=doc_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
-    st.markdown("---")
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
     # Filter UI
     f_col1, f_col2, f_col3 = st.columns([1.5, 1, 1.5])
     domains = ["All Domains"] + sorted(list(set(ps["domain"] for ps in PROBLEM_STATEMENTS)))
     with f_col1:
-        selected_domain = st.selectbox("Filter by Domain", domains)
+        selected_domain = st.selectbox("Explore by Domain", domains)
     with f_col2:
-        selected_cat = st.selectbox("Category", ["All Categories", "HARDWARE", "SOFTWARE"])
+        selected_cat = st.selectbox("Track", ["All Tracks", "HARDWARE", "SOFTWARE"])
     with f_col3:
-        search_query = st.text_input("Search Keyword or Title", placeholder="e.g. EV, Solar, Drone")
+        search_query = st.text_input("Search Projects", placeholder="e.g. AI, Drone, Solar...")
 
     filtered_list = PROBLEM_STATEMENTS
     if selected_domain != "All Domains":
         filtered_list = [ps for ps in filtered_list if ps["domain"] == selected_domain]
-    if selected_cat != "All Categories":
+    if selected_cat != "All Tracks":
         filtered_list = [ps for ps in filtered_list if ps["category"] == selected_cat]
     if search_query:
         q = search_query.lower()
         filtered_list = [ps for ps in filtered_list if q in ps["title"].lower() or q in ps["desc"].lower()]
 
-    st.write(f"Showing **{len(filtered_list)}** problem statement(s):")
+    st.markdown(f"<p style='color: #64748B; font-weight: 600;'>Showing {len(filtered_list)} projects</p>", unsafe_allow_html=True)
 
     # ==========================================
-    # CUSTOM ACCORDION (ONLY 1 OPEN AT A TIME)
+    # CUSTOM FLOATING CARDS (ONLY 1 OPEN AT A TIME)
     # ==========================================
     for ps in filtered_list:
         with st.container(border=True):
-            # Header Row: [ Title ] [ Badge ] [ Button ]
+            # Header Row
             row_c1, row_c2, row_c3 = st.columns([5, 1.5, 2])
             
             with row_c1:
-                st.markdown(f"<h4 style='margin-bottom: 0px;'>PS #{ps['id']:02d}: {ps['title']}</h4>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='margin-bottom: 0px; font-size: 1.25rem;'>PS #{ps['id']:02d}: {ps['title']}</h3>", unsafe_allow_html=True)
             
             with row_c2:
-                # Badge appears beside the name *before* opening
                 c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
                 st.markdown(f'<div style="margin-top: 5px;"><span class="{c_tag}">{ps["category"]}</span></div>', unsafe_allow_html=True)
                 
             with row_c3:
-                # Toggle logic
                 is_active = st.session_state.active_ps == ps['id']
-                btn_lbl = "🔼 Hide Details" if is_active else "🔽 View Details"
+                btn_lbl = "Close Details" if is_active else "View Details"
                 if st.button(btn_lbl, key=f"tgl_{ps['id']}", use_container_width=True, type="secondary"):
                     if is_active:
                         st.session_state.active_ps = None
@@ -490,32 +535,30 @@ if st.session_state.page == 'home':
 
             # Expanded Details Content
             if st.session_state.active_ps == ps['id']:
-                st.markdown("<hr style='margin: 15px 0px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+                st.markdown("<hr style='border: 1px solid #F1F5F9; margin: 1rem 0;'>", unsafe_allow_html=True)
+                st.markdown(f'<p style="color: #64748B; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">Domain: {ps["domain"]}</p>', unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size: 1.05rem; line-height: 1.6; color: #334155;'>{ps['desc']}</p>", unsafe_allow_html=True)
                 
-                # Badge also appears inside
-                st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b style="color:#05234A; font-size: 1.1rem;">Domain: {ps["domain"]}</b>', unsafe_allow_html=True)
-                st.markdown(f"<p style='margin-top: 15px; font-size: 1.05rem; line-height: 1.6;'>{ps['desc']}</p>", unsafe_allow_html=True)
-                
-                # Components List inside details
+                # Components List
                 if ps["category"] == "SOFTWARE":
-                    st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
+                    st.info("💻 **Software Track Project:** There are no hardware component requirements. Evaluation focuses on cloud architecture, algorithms, and deployment.")
                 else:
-                    st.markdown("#### 📦 Expected Prototyping Hardware Components:")
+                    st.markdown("<h4 style='margin-top: 1.5rem; font-size: 1rem;'>Expected Prototyping Kit</h4>", unsafe_allow_html=True)
                     col_c1, col_c2 = st.columns(2)
                     mid_pt = (len(ps['components']) + 1) // 2
                     with col_c1:
                         for comp in ps['components'][:mid_pt]:
-                            st.markdown(f"🔹 {comp}")
+                            st.markdown(f"<span style='color: #475569;'>• {comp}</span>", unsafe_allow_html=True)
                     with col_c2:
                         for comp in ps['components'][mid_pt:]:
-                            st.markdown(f"🔹 {comp}")
+                            st.markdown(f"<span style='color: #475569;'>• {comp}</span>", unsafe_allow_html=True)
 
                 # Register Now Button
                 st.markdown("<br>", unsafe_allow_html=True)
                 ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
                 
                 st.button(
-                    f"🚀 Register Now for PS #{ps['id']:02d}", 
+                    f"Register Team for PS #{ps['id']:02d}", 
                     type="primary", 
                     key=f"btn_reg_{ps['id']}", 
                     on_click=navigate_to, 
@@ -527,13 +570,12 @@ if st.session_state.page == 'home':
 # VIEW 2: REGISTRATION & PAYMENT
 # ==============================================================================
 elif st.session_state.page == 'registration':
-    st.button("⬅️ Back to Problem Statements", on_click=navigate_to, args=('home',))
+    st.button("← Back to Discovery Portal", on_click=navigate_to, args=('home',), type="secondary")
     
-    st.subheader("Team Registration & Checkout")
+    st.markdown("<h2 style='margin-top: 1rem;'>Team Registration & Checkout</h2>", unsafe_allow_html=True)
     st.write("Complete the details below to register your team. **All 5 team members are compulsory**.")
     st.info("💳 **Registration Fee: ₹350 per team**")
 
-    # Determine Dropdown Index
     default_ps_index = 0
     if st.session_state.selected_ps in ps_titles:
         default_ps_index = ps_titles.index(st.session_state.selected_ps)
@@ -544,16 +586,10 @@ elif st.session_state.page == 'registration':
         with col_t1:
             team_name = st.text_input("Team Name *", placeholder="e.g. Walchand Innovators")
         with col_t2:
-            # Dropdown locks automatically if user navigated via "Register Now"
             is_ps_locked = st.session_state.get('ps_locked', False)
-            assigned_ps = st.selectbox(
-                "Allocated Problem Statement *", 
-                ps_titles, 
-                index=default_ps_index,
-                disabled=is_ps_locked
-            )
+            assigned_ps = st.selectbox("Allocated Problem Statement *", ps_titles, index=default_ps_index, disabled=is_ps_locked)
             if is_ps_locked:
-                st.caption("🔒 *Locked based on your selection. To change, go back.*")
+                st.caption("🔒 Locked based on your selection. Go back to change.")
 
         st.markdown("---")
         st.markdown("#### 2. Core Members (All 5 Compulsory)")
@@ -575,19 +611,30 @@ elif st.session_state.page == 'registration':
             m3_name = st.text_input("Member 3 Full Name *")
             m5_name = st.text_input("Member 5 Full Name *")
 
+        # ==============================================================================
+        # MASSIVE DISCLAIMER ALERT FOR CUSTOM COMPONENTS
+        # ==============================================================================
         st.markdown("---")
-        st.markdown("#### 3. Custom Component Requests (Optional)")
-        st.caption("If your team requires additional components beyond the expected list, categorize them below:")
+        st.markdown("#### 3. Custom Component Architecture (Optional)")
+        
+        st.markdown("""
+        <div class="hardware-disclaimer">
+            <h4>🚨 PROCUREMENT DISCLAIMER & WARNING</h4>
+            <p><strong>The organizing committee will STRICTLY provide ONLY the standard base components listed in the official compendium.</strong><br><br>
+            If your architecture requires <i>any</i> custom sensors, advanced microcontrollers, specific actuators, or alternative electronics not explicitly mentioned in the official list, <b>you must arrange, purchase, and bring them entirely at your own risk and expense.</b> <br><br>
+            Listing them below is solely to provide technical evaluators with context on your solution architecture. <b>This is NOT a procurement request. We will NOT provide these items.</b></p>
+        </div>
+        """, unsafe_allow_html=True)
 
         cat_col1, cat_col2 = st.columns(2)
         with cat_col1:
-            cat_boards = st.text_input("Microcontrollers & Boards")
-            cat_sensors = st.text_input("Sensors & Modules")
-            cat_power = st.text_input("Power & Batteries")
+            cat_boards = st.text_input("Microcontrollers & Boards (Self-Arranged)")
+            cat_sensors = st.text_input("Sensors & Modules (Self-Arranged)")
+            cat_power = st.text_input("Power & Batteries (Self-Arranged)")
         with cat_col2:
-            cat_motors = st.text_input("Motors, Relays & Actuators")
-            cat_displays = st.text_input("Displays & Indicators")
-            cat_misc = st.text_input("Misc / Passives / Wiring")
+            cat_motors = st.text_input("Motors, Relays & Actuators (Self-Arranged)")
+            cat_displays = st.text_input("Displays & Indicators (Self-Arranged)")
+            cat_misc = st.text_input("Misc / Passives / Wiring (Self-Arranged)")
 
         st.markdown("---")
         submit_btn = st.form_submit_button("Proceed to Payment Checkout (₹350)", type="primary")
@@ -624,7 +671,7 @@ elif st.session_state.page == 'registration':
     if "registration_record" in st.session_state:
         rec = st.session_state["registration_record"]
         st.markdown("---")
-        st.subheader("UPI Payment & 12-Digit UTR Verification")
+        st.markdown("### UPI Payment & 12-Digit UTR Verification")
 
         col_pay1, col_pay2 = st.columns([1, 1.5])
         with col_pay1:
@@ -635,7 +682,7 @@ elif st.session_state.page == 'registration':
             qr = qrcode.QRCode(version=1, box_size=8, border=3)
             qr.add_data(upi_string)
             qr.make(fit=True)
-            img = qr.make_image(fill_color="#05234A", back_color="white")
+            img = qr.make_image(fill_color="#0F172A", back_color="white")
 
             buf = BytesIO()
             img.save(buf, format="PNG")
@@ -655,7 +702,7 @@ elif st.session_state.page == 'registration':
             """)
 
         with st.form("utr_verification_form"):
-            utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number *", max_chars=12, placeholder="12 numeric digits")
+            utr_input = st.text_input("Enter 12-Digit UPI Transaction ID / UTR Number *", max_chars=12)
             submit_utr = st.form_submit_button("Submit UTR & Finalize Registration", type="primary")
 
             if submit_utr:
@@ -666,7 +713,6 @@ elif st.session_state.page == 'registration':
                         payload = rec.copy()
                         payload['utr'] = utr_input
                         
-                        # ⚠️ CRITICAL: Replace the placeholder below with your GOOGLE APPS SCRIPT WEBHOOK URL.
                         webhook_url = "https://script.google.com/u/0/home/projects/1K1qp6OBexjHi71dDcG6Exu3C6MEg1o9XBoapOq5w5oXus2yAucTt4thA/triggers"
                         
                         try:
@@ -680,14 +726,3 @@ elif st.session_state.page == 'registration':
                                 st.error("Database sync failed. Please verify your internet connection or resubmit.")
                         except Exception as e:
                             st.error("Webhook Error: Did you paste your Apps Script Deployment URL into the code? You cannot use the standard docs.google.com link here.")
-
-# ==============================================================================
-# FOOTER
-# ==============================================================================
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #64748B; font-size: 0.85rem; padding: 1rem 0;">
-    Walchand College of Engineering, Sangli • Department of Electrical Engineering<br>
-    Built with Python & Streamlit • Autonomous Engineering Institute
-</div>
-""", unsafe_allow_html=True)

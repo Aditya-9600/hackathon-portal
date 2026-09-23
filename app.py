@@ -667,7 +667,7 @@ elif st.session_state.page == 'registration':
                         payload['utr'] = utr_input
                         
                         # ⚠️ CRITICAL: Replace the placeholder below with your GOOGLE APPS SCRIPT WEBHOOK URL.
-                        webhook_url = "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_WEBHOOK_URL_HERE/exec"
+                        webhook_url = "https://script.google.com/u/0/home/projects/1K1qp6OBexjHi71dDcG6Exu3C6MEg1o9XBoapOq5w5oXus2yAucTt4thA/triggers"
                         
                         try:
                             res = requests.post(webhook_url, json=payload, timeout=10)

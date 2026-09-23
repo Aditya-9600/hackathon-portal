@@ -9,69 +9,79 @@ import datetime
 import os
 
 # ==============================================================================
-# 1. PAGE CONFIGURATION & SIH THEME STYLING
+# 1. PAGE CONFIGURATION & INITIALIZATION
 # ==============================================================================
 st.set_page_config(
-    page_title="WCE Hackathon 2026 | SIH Theme",
-    page_icon="🇮🇳",
+    page_title="WCE Electrical Dept | Hackathon 2026",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Initialize Session State for Navigation
+# Initialize Session States
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
 if 'selected_ps' not in st.session_state:
     st.session_state.selected_ps = None
+if 'active_ps' not in st.session_state:
+    st.session_state.active_ps = None  
 
 def navigate_to(page_name, ps_title=None):
     st.session_state.page = page_name
     if ps_title:
         st.session_state.selected_ps = ps_title
+    st.session_state.active_ps = None 
 
-# SIH-Inspired CSS (Deep Navy, Pure White, and Saffron/Orange Accents)
+# ==============================================================================
+# 2. THEME STYLING (ANIMATIONS & HIDING SOURCE CODE ICONS)
+# ==============================================================================
 st.markdown("""
 <style>
-    /* Global Background */
+    /* HIDE STREAMLIT & GITHUB ICONS (Security/Clean UI) */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .viewerBadge_container__1QSob {display: none !important;}
+    .stDeployButton {display:none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+
+    /* Lightweight Tech Background */
     .stApp {
-        background-color: #F4F6F9 !important;
+        background-color: #F0F4F8 !important;
+        background-image: radial-gradient(#CBD5E1 1px, transparent 1px) !important;
+        background-size: 25px 25px !important;
         font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
+    
+    /* Ensure Native Text is Dark for Readability */
     .stApp p, .stApp span, .stApp label, .stApp div, .stApp h3, .stApp h4 { 
-        color: #1E293B; 
+        color: #0F172A; 
     }
 
-    /* SIH Hero Banner */
+    /* Animated Hero Banner with Accent */
+    @keyframes gradientPan {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
     .hero-banner {
-        background: linear-gradient(135deg, #05234A 0%, #0A3D85 100%);
+        background: linear-gradient(-45deg, #05234A, #0A3D85, #001233, #082F66);
+        background-size: 400% 400%;
+        animation: gradientPan 12s ease infinite;
         border-radius: 12px;
         padding: 3rem 4rem;
         margin-bottom: 2.5rem;
-        box-shadow: 0 12px 35px -10px rgba(5, 35, 74, 0.4);
-        border-bottom: 8px solid #FF7A00; /* SIH Saffron/Orange */
+        box-shadow: 0 15px 35px -10px rgba(5, 35, 74, 0.5);
+        border-bottom: 6px solid;
+        border-image: linear-gradient(to right, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #138808 66%) 1;
         position: relative;
-        overflow: hidden;
     }
-    
-    /* Subtle background pattern for hero */
-    .hero-banner::after {
-        content: '';
-        position: absolute;
-        top: 0; right: 0; bottom: 0; left: 0;
-        background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-        background-size: 20px 20px;
-        opacity: 0.5;
-        pointer-events: none;
-    }
-
     .hero-banner h1, .hero-banner p, .hero-banner div {
         color: #FFFFFF !important;
-        position: relative;
-        z-index: 2;
     }
     .inst-tag {
         display: inline-block;
-        background: #FF7A00;
+        background: #FF9933; 
         color: #FFFFFF !important;
         padding: 6px 18px;
         border-radius: 4px;
@@ -80,73 +90,64 @@ st.markdown("""
         letter-spacing: 1.5px;
         text-transform: uppercase;
         margin-bottom: 1.2rem;
-        box-shadow: 0 4px 10px rgba(255, 122, 0, 0.4);
+        box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4);
     }
     .hero-title {
-        font-size: 3rem; font-weight: 900; line-height: 1.2; margin: 0; letter-spacing: -0.5px;
+        font-size: 3.2rem; font-weight: 900; line-height: 1.2; margin: 0; letter-spacing: -0.5px;
     }
     .hero-sub {
         font-size: 1.25rem; opacity: 0.95; margin-top: 1rem; font-weight: 400; max-width: 800px;
     }
     
-    /* Problem Statement Expanders (SIH Table style) */
-    [data-testid="stExpander"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-        margin-bottom: 1rem !important;
-        overflow: hidden;
-    }
-    [data-testid="stExpander"] summary {
-        background-color: #FFFFFF !important;
-        padding: 1rem !important;
-        font-weight: 700 !important;
-        color: #05234A !important;
-    }
-    [data-testid="stExpander"] summary:hover {
-        background-color: #F8FAFC !important;
-    }
-    
-    /* Badges */
+    /* Category Badges (Hardware/Software) */
     .badge-hw {
-        background-color: #E6F4EA; color: #137333; padding: 5px 14px;
-        border-radius: 4px; font-weight: 700; font-size: 0.85rem; border: 1px solid #CEEAD6;
+        background-color: #E6F4EA; color: #137333 !important; padding: 6px 16px;
+        border-radius: 50px; font-weight: 800; font-size: 0.85rem; border: 1px solid #CEEAD6;
+        display: inline-block; text-align: center;
     }
     .badge-sw {
-        background-color: #E8F0FE; color: #1967D2; padding: 5px 14px;
-        border-radius: 4px; font-weight: 700; font-size: 0.85rem; border: 1px solid #D2E3FC;
+        background-color: #E8F0FE; color: #1967D2 !important; padding: 6px 16px;
+        border-radius: 50px; font-weight: 800; font-size: 0.85rem; border: 1px solid #D2E3FC;
+        display: inline-block; text-align: center;
     }
-    
-    /* Secondary/Back Buttons */
-    .stButton>button {
-        border-radius: 6px; font-weight: 600; padding: 0.6rem 1.5rem;
-        border: 1px solid #CBD5E1; color: #334155; transition: all 0.2s;
+
+    /* Pulsating Primary Buttons */
+    @keyframes pulse-btn {
+        0% { box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4); }
+        50% { box-shadow: 0 8px 20px rgba(255, 153, 51, 0.7); }
+        100% { box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4); }
     }
-    
-    /* Primary "Register Now" SIH Buttons */
     .stButton>button[kind="primary"] {
-        background: linear-gradient(135deg, #FF7A00 0%, #E65C00 100%) !important;
+        background: linear-gradient(135deg, #FF9933 0%, #E67E22 100%) !important;
         color: #FFFFFF !important;
         border: none !important;
         border-radius: 6px;
-        font-weight: 700;
-        font-size: 1.05rem;
-        padding: 0.75rem 2rem;
-        box-shadow: 0 6px 15px rgba(255, 122, 0, 0.3) !important;
-        width: 100%;
-        margin-top: 1rem;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 0.8rem 2rem;
+        animation: pulse-btn 2.5s infinite;
+        transition: transform 0.2s;
     }
     .stButton>button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #E65C00 0%, #CC5200 100%) !important;
-        box-shadow: 0 8px 20px rgba(255, 122, 0, 0.4) !important;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
     }
 
-    /* Inputs & Form Elements */
+    /* Standard Buttons */
+    .stButton>button[kind="secondary"] {
+        background: #F8FAFC !important;
+        border: 1px solid #CBD5E1 !important;
+        color: #05234A !important;
+        font-weight: 700;
+    }
+    .stButton>button[kind="secondary"]:hover {
+        background: #F1F5F9 !important;
+        border-color: #05234A !important;
+    }
+
+    /* Forms & Inputs */
     .stTextInput input, .stTextArea textarea, .stSelectbox [data-baseweb="select"] {
-        background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important;
-        border-radius: 6px !important; color: #0F172A !important; padding: 0.6rem !important;
+        background-color: #FFFFFF !important; border: 1.5px solid #CBD5E1 !important;
+        border-radius: 8px !important; color: #0F172A !important; padding: 0.6rem !important;
     }
     .stTextInput input:focus, .stTextArea textarea:focus {
         border-color: #05234A !important; box-shadow: 0 0 0 2px rgba(5, 35, 74, 0.15) !important;
@@ -155,28 +156,28 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. OFFICIAL DATABASE (ALL 69 STATEMENTS, NO PRICING)
+# 3. PROBLEM STATEMENTS DATABASE
 # ==============================================================================
 PROBLEM_STATEMENTS = [
     # DOMAIN 01: Smart Cities & Urbanization
     {"id": 1, "domain": "Smart Cities & Urbanization", "title": "Smart Street Environment & Noise Monitoring", "category": "HARDWARE",
      "desc": "Develop an IoT-based system that dynamically controls streetlight brightness based on real-time pedestrian/vehicle activity while continuously monitoring urban noise levels.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "MAX9814 Electret Microphone with Auto Gain Control (Qty: 1)", "HC-SR501 PIR Motion Sensor Module (Qty: 1)", "LDR Photoresistor Module (Qty: 1)", "12V 5W High-Power LED Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 3A SMPS Enclosed Industrial Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "IRF520 MOSFET Driver IC (Qty: 1)", "830-Tie Point Breadboard (Qty: 1)", "10µF Filter Capacitors, Jumper Wires, Terminals (Qty: 1)"]},
+     "components": ["ESP32-WROOM-32 Dev Board", "MAX9814 Electret Mic Module with AGC", "LDR Photoresistor Module", "IRF520 MOSFET Driver Module", "12V LED Spotlight / Strip", "LM2596 Buck Converter"]},
     {"id": 2, "domain": "Smart Cities & Urbanization", "title": "Urban Flood Monitoring & Early Warning", "category": "HARDWARE",
      "desc": "Develop a waterproof monitoring system that detects rapidly rising water levels in urban drains and underpasses and provides early warnings.",
-     "components": ["ESP32-WROOM-32U (External Antenna) (Qty: 1)", "JSN-SR04T Waterproof Ultrasonic Level Sensor Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "High-Decibel 12V Outdoor Siren Module (Qty: 1)", "12V 3A Weatherproof Industrial SMPS Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler IC (Qty: 1)", "TIP122 Darlington Transistor IC (Qty: 1)", "400-Tie Point Breadboard & IP65 Enclosure (Qty: 1)", "Cable Glands, 1N4007 Diodes, Jumper Wires (Qty: 1)"]},
+     "components": ["ESP32-WROOM-32U (External Antenna)", "JSN-SR04T Waterproof Ultrasonic Level Sensor", "High-Decibel 12V Siren Module", "SIM800L GPRS/GSM Module", "12V 2A SMPS Power Supply"]},
     {"id": 3, "domain": "Smart Cities & Urbanization", "title": "Urban Underground Water Leak Detection", "category": "HARDWARE",
      "desc": "Develop a system that detects and helps locate underground water-pipe leaks using flow, pressure, and acoustic sensing without excavation.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "Piezo Electric Acoustic Contact Sensor + LM358 Pre-Amp (Qty: 1)", "YF-S201 Hall-Effect Water Flow Sensor (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 2A SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "74HC14 Schmitt Trigger IC (Qty: 1)", "830-Tie Point Breadboard (Qty: 1)", "Jumper Wires, 10kΩ Pull-up Resistors, Filter Caps (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "YF-S201 Hall-Effect Water Flow Sensor", "MPX5010DP Pressure Sensor", "Piezoelectric Acoustic Contact Sensor + LM358 PreAmp", "OLED Display 0.96-inch"]},
     {"id": 4, "domain": "Smart Cities & Urbanization", "title": "Underground Sewage Gas Safety", "category": "HARDWARE",
      "desc": "Develop a low-power system that continuously monitors toxic and combustible gases in underground sewage systems and provides warnings.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "MQ-136 Hydrogen Sulfide (H2S) Gas Sensor Module (Qty: 1)", "MQ-4 Methane / Combustible Gas Sensor Module (Qty: 1)", "12V 1A DC Exhaust Blower Fan + 1-Channel Relay (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A Industrial Metal SMPS Unit (Qty: 1)", "LM2596S DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler IC (Qty: 1)", "830-Tie Point Breadboard (Qty: 1)", "High-Decibel Buzzer, Jumper Wires, Status LEDs (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "MQ-136 H2S Gas Sensor Module", "MQ-4 Methane Sensor Module", "5V Loud Active Buzzer", "16x2 I2C Character LCD"]},
     {"id": 5, "domain": "Smart Cities & Urbanization", "title": "Dynamic Digital Traffic Signage", "category": "HARDWARE",
      "desc": "Develop a connected digital signage system that receives real-time traffic data and automatically displays alternative routes or detour instructions.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "MAX7219 4-in-1 Dot Matrix LED Display Module (32x8) (Qty: 2)", "DS3231 High-Precision Real Time Clock IC Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "5V 4A SMPS Enclosed Industrial Supply (Qty: 1)", "74HC595 Shift Register IC (Qty: 1)", "830-Tie Point Breadboard (Qty: 1)", "Jumper Wires, 10µF Smoothing Capacitors, Resistors (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit", "MAX7219 4-in-1 Dot Matrix LED Display Module", "NEO-6M GPS Module", "5V 4A SMPS Power Supply"]},
     {"id": 6, "domain": "Smart Cities & Urbanization", "title": "Smart Waste Management", "category": "HARDWARE",
      "desc": "Develop an IoT-based waste management system that monitors garbage-bin fill levels, detects overflow conditions, and sends alerts.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "HC-SR04 Ultrasonic Distance Sensor Modules (Qty: 2)", "SW-520D Roller Ball Tilt / Overflow Sensor Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "SG90 9g Micro Servo Motor (Qty: 1)", "5V 2A SMPS Power Supply Adapter (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "400-Tie Point Breadboard (Qty: 1)", "Jumper Wires, Status LEDs, 10kΩ Pull-up Resistors (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "HC-SR04 Ultrasonic Distance Sensor", "SW-520D Tilt/Overflow Sensor", "SG90 Micro Servo Motor", "TP4056 Battery Charger + Li-ion Cell"]},
     {"id": 7, "domain": "Smart Cities & Urbanization", "title": "AI-Powered Traffic Flow Optimization", "category": "SOFTWARE",
      "desc": "Develop a centralized software platform that ingests real-time transit and ride-sharing GPS data to dynamically adjust traffic light timings.",
      "components": []},
@@ -187,22 +188,22 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 02: Healthcare & Medical Technology
     {"id": 9, "domain": "Healthcare & Medical Technology", "title": "Elderly Care & Assistive Technology", "category": "HARDWARE",
      "desc": "Develop a wearable system that detects accidental falls in elderly individuals, provides medication reminders, and sends SOS alerts with GPS location.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "MPU-6050 6-Axis Accelerometer/Gyro Module (Qty: 1)", "NEO-6M GPS Module with Ceramic Antenna (Qty: 1)", "SIM800L GPRS/GSM Module (Qty: 1)", "DS3231 High-Precision RTC IC Module (Qty: 1)", "3V Coin Flat Vibration Motor (Qty: 1)", "TP4056 1A Li-Ion Battery Charger IC Module (Qty: 1)", "3.7V 1200mAh Li-Po Rechargeable Battery (Qty: 1)", "5V 2A SMPS Module (Qty: 1)", "2N2222 NPN Transistor (Qty: 2)", "AMS1117-3.3V LDO Voltage Regulator IC (Qty: 2)", "Mini 170-Tie Point Breadboard (Qty: 1)", "Tactile SOS Push Button, 1N4148 Diodes, Resistors & Caps (Qty: 1)"]},
+     "components": ["ESP32-C3 SuperMini RISC-V Dev Board", "MPU-6050 6-DOF IMU Sensor", "NEO-6M GPS Module", "Mini 3V Coin Vibration Motor", "3.7V 800mAh LiPo Cell + TP4056"]},
     {"id": 10, "domain": "Healthcare & Medical Technology", "title": "Hospital Patient Safety & Monitoring", "category": "HARDWARE",
      "desc": "Develop a smart monitoring system that continuously detects the remaining level of an IV fluid bag and automatically alerts nursing staff.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "1kg Straight Bar Load Cell + HX711 24-bit ADC Module (Qty: 1)", "16x2 Character LCD with PCF8574 I2C Backpack (Qty: 1)", "5V Loud Active Buzzer + Ultra-bright Red LED (Qty: 1)", "12V 2A SMPS (Qty: 1)", "LM2596S DC-DC Step-Down Buck Converter Module (Qty: 1)", "HX711 24-Bit ADC IC Spare (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "830-Tie Point Breadboard (Qty: 1)", "1N4007 Diodes, Resistor Pack, JST Cables, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "1kg Straight Bar Load Cell + HX711 24-bit ADC Module", "Non-Contact Capacitive Liquid Level Sensor", "0.96-inch I2C OLED Display"]},
     {"id": 11, "domain": "Healthcare & Medical Technology", "title": "Blood Bank & Medical Inventory Management", "category": "HARDWARE",
      "desc": "Develop an IoT-based system that continuously monitors blood storage temperature and tracks blood bag inventory/expiry information.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "RC522 13.56 MHz RFID Reader Module (Qty: 1)", "13.56MHz Mifare Classic 1K RFID Adhesive Tags/Cards (Qty: 10)", "DS18B20 Waterproof Stainless Steel Digital Probe (Qty: 2)", "20x4 Character LCD with I2C Interface Adapter (Qty: 1)", "12V 3A SMPS (Qty: 1)", "LM2596 DC-DC Buck Module (Qty: 1)", "DS18B20 1-Wire IC (Qty: 1)", "74HC4050 Hex Buffer IC (Qty: 1)", "BC547 NPN BJT IC (Qty: 2)", "830-Tie Point Breadboard (Qty: 1)", "Pull-Up Resistors, Filter Caps, Piezo Alarm Buzzer, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "DS18B20 Waterproof Stainless Digital Temperature Probe", "RC522 13.56MHz RFID Reader + Mifare Tags", "16x2 I2C Character LCD"]},
     {"id": 12, "domain": "Healthcare & Medical Technology", "title": "Neonatal & Maternal Healthcare", "category": "HARDWARE",
      "desc": "Develop a smart incubator monitoring and control system that maintains stable temperature and humidity for premature babies.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "SHT31 High-Accuracy I2C Temp & Humidity Sensor (Qty: 1)", "DS18B20 Waterproof Skin-Surface Probe (Qty: 1)", "12V 50W PTC Ceramic Insulated Air Heating Element (Qty: 1)", "12V Brushless DC Blower Fan (Qty: 1)", "5V/12V Ultrasonic Mist Maker Disk (Qty: 1)", "IRF520/AOD4184 MOSFET Driver Module (Qty: 2)", "12V 10A 120W SMPS (Qty: 1)", "LM2596 Step-Down Buck Converter (Qty: 2)", "AMS1117-3.3V LDO IC (Qty: 2)", "PC817 Optocoupler IC (Qty: 2)", "1N4007 Flyback Diodes, Barrier Screw Terminals, 830 Breadboard (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "SHT31 High-Precision Temp & Humidity Sensor", "12V 50W PTC Ceramic Heating Element", "12V DC Blower Fan", "2-Channel 5V Optocoupled Relay Module"]},
     {"id": 13, "domain": "Healthcare & Medical Technology", "title": "Preventive Healthcare & Wellness", "category": "HARDWARE",
      "desc": "Develop a smart bottle that automatically measures water intake, monitors hydration patterns, and provides personalized reminders.",
-     "components": ["ESP32-C3 SuperMini RISC-V Dev Board (Qty: 1)", "Non-Contact Capacitive Liquid Level Sensor (Qty: 1)", "RC522 13.56MHz RFID Reader Module (Qty: 1)", "0.42-inch OLED I2C Display Module (Qty: 1)", "5V 2A SMPS Wall Charger Adapter (Qty: 1)", "TP4056 Battery Charger IC + 1000mAh LiPo (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "3V Coin Flat Vibration Motor (Qty: 1)", "Mini 170-Tie Point Breadboard, Resistors, Caps, Pushbutton, Jumpers (Qty: 1)"]},
+     "components": ["Arduino Nano / ESP32-C3", "Non-Contact Capacitive Liquid Level Sensor", "0.42-inch OLED I2C Display Module", "Coin Vibration Motor", "TP4056 Charger + LiPo"]},
     {"id": 14, "domain": "Healthcare & Medical Technology", "title": "AI-Based Disease Detection & Medical Diagnostics", "category": "HARDWARE",
      "desc": "Develop a low-cost digital microscopy system that captures blood-smear images and uses computer vision to highlight malaria/dengue cells.",
-     "components": ["ESP32-S3-WROOM-1 DevKit (16MB Flash, 8MB PSRAM) (Qty: 1)", "OV5640 5MP Camera Module with AF Lens (Qty: 1)", "Precision Adjustable LED Spotlight Condenser (Qty: 1)", "RC522 RFID Module (Qty: 1)", "NEMA 17 Stepper Motor (Qty: 1)", "12V 3A Enclosed SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Converter (Qty: 1)", "A4988 Stepper Motor Driver IC Board (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "830-Tie Point Breadboard, Zero PCB, Limit Switches, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit with OV2640 / OV5640 Camera", "Precision Adjustable LED Spotlight Condenser", "MicroSD Card Module + 16GB Card", "A4988 Stepper Driver + NEMA 17 Motor"]},
     {"id": 15, "domain": "Healthcare & Medical Technology", "title": "Digital Healthcare & Organ Transplant Management", "category": "SOFTWARE",
      "desc": "Develop a secure platform that enables hospitals to efficiently match organ donors with eligible recipients based on compatibility factors.",
      "components": []},
@@ -213,22 +214,22 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 03: Electric Vehicles (EV) & Mobility
     {"id": 17, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Battery Safety & Thermal Runaway", "category": "HARDWARE",
      "desc": "Develop a low-cost battery monitoring system that detects early signs of thermal runaway at the cell level and isolates the affected module.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "NTC 10k Precision Thermistors (Pack of 5 Cell Probes) (Qty: 1)", "MQ-2 Flammable Gas / Venting Smoke Sensor Module (Qty: 1)", "4-Channel 5V Optocoupled Relay Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 10A 120W Industrial SMPS (Qty: 1)", "LM393 Dual Comparator IC (Qty: 2)", "LM2596S DC-DC Step-Down Buck Module (Qty: 1)", "830-Tie Point Breadboard, High-Decibel Siren, 10kΩ Resistors, Harness (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "NTC 10k Precision Thermistors (Pack of 5 Cell Probes)", "MQ-2 Flammable Gas Sensor", "4-Channel 5V Relay Module", "12V 10A Industrial SMPS"]},
     {"id": 18, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Motor Fault Detection & Predictive Maintenance", "category": "HARDWARE",
      "desc": "Develop a sensorless motor-monitoring system analyzing three-phase current signals to detect developing inter-turn winding faults.",
-     "components": ["ESP32-WROOM-32 (Fast ADC & FFT) (Qty: 1)", "ACS712 30A Current Sensor Modules (Qty: 3)", "LM358 Operational Amplifier Signal Conditioning ICs (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 5A Bench Industrial SMPS Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "0.96-inch I2C OLED Display Module (Qty: 1)", "Small 3-Phase BLDC Motor + ESC (Qty: 1)", "830 Breadboard, Shielded Hookup Wire, Filter Caps, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "ACS712 30A Current Sensor Modules", "LM358 Signal Conditioning ICs", "Small 3-Phase BLDC Motor + ESC", "0.96-inch OLED Display Module"]},
     {"id": 19, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Charging Infrastructure Monitoring", "category": "HARDWARE",
      "desc": "Develop a retrofit device that independently verifies whether an EV charging station is delivering power and logs genuine charging events.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "PZEM-004T V3.0 AC Multi-Function Energy Meter Module (Qty: 1)", "SCT-013-000 100A Current Transformer Clamp (Qty: 1)", "RC522 13.56MHz RFID Reader (Qty: 1)", "12V 2A Enclosed Industrial SMPS Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "0.96-inch I2C OLED Display Screen (Qty: 1)", "5V 2A USB Dummy Load Resistor (Qty: 1)", "830-Tie Point Breadboard, Terminal Blocks, 14AWG Wire, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "PZEM-004T V3.0 AC Multi-Function Energy Meter", "SCT-013-000 100A Current Transformer", "RC522 RFID Reader", "5V 2A USB Dummy Load"]},
     {"id": 20, "domain": "Electric Vehicles (EV) & Mobility", "title": "Regenerative Braking & Energy Recovery", "category": "HARDWARE",
      "desc": "Develop an intelligent regenerative-braking controller that dynamically manages regen levels based on motor status and battery state.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ACS712 30A Bidirectional Current Sensor Module (Qty: 1)", "IRFB3077 High Current N-MOSFET (Qty: 2)", "TC4427/IR2104 High-Speed MOSFET Gate Driver IC (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 10A 120W Industrial SMPS (Qty: 1)", "LM2596S DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "830 Breadboard, Power Resistors, 1000µF Filter Caps, 14AWG Wire (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "IRFB3077 High Current N-MOSFET", "TC4427/IR2104 Gate Driver IC", "12V 10A Industrial SMPS", "Power Dump Resistors"]},
     {"id": 21, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Traction Control & Vehicle Stability", "category": "HARDWARE",
      "desc": "Develop an intelligent traction-control system that detects excessive wheel slip and dynamically adjusts motor torque.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "LM393 Optical Wheel Speed Sensor Modules (Dual Encoders) (Qty: 2)", "L298N Dual H-Bridge Motor Driver Module (Qty: 1)", "Dual TT DC Geared Motors with Encoder Disks (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 5A Bench Industrial SMPS Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "74HC14 Hex Inverting Schmitt Trigger IC (Qty: 1)", "830 Breadboard, Jumpers, 100nF Ceramic Capacitors, Status LEDs (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "LM393 Optical Wheel Speed Sensors", "L298N Dual H-Bridge Motor Driver Module", "Dual TT DC Geared Motors with Encoders", "12V 5A Bench SMPS"]},
     {"id": 22, "domain": "Electric Vehicles (EV) & Mobility", "title": "EV Structural Health & Predictive Maintenance", "category": "HARDWARE",
      "desc": "Develop an accelerometer-based system for detecting structural fatigue in an EV battery mounting system by analyzing resonant frequency.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ADXL345 3-Axis Digital High-g Accelerometer (Qty: 1)", "SW-420 High Sensitivity Shock/Vibration Sensor (Qty: 1)", "RC522 RFID Module (Qty: 1)", "0.96-inch I2C OLED Display Module (Qty: 1)", "12V 2A SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "LM393 Dual Comparator IC (Qty: 1)", "830-Tie Point Breadboard, Jumpers, Status LEDs, 10kΩ Resistors (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "ADXL345 3-Axis Digital Accelerometer", "SW-420 High Sensitivity Vibration Sensor", "12V 2A SMPS Power Supply", "0.96-inch I2C OLED Display"]},
     {"id": 23, "domain": "Electric Vehicles (EV) & Mobility", "title": "Smart EV Fleet Routing & Charging", "category": "SOFTWARE",
      "desc": "Develop a cloud-based software platform for commercial EV fleets calculating optimal delivery routes factoring in SOC and charging stations.",
      "components": []},
@@ -251,10 +252,10 @@ PROBLEM_STATEMENTS = [
      "components": []},
     {"id": 29, "domain": "Education & Academic Learning", "title": "Smart Handwriting Posture & Grip Assistant", "category": "HARDWARE",
      "desc": "Develop a smart pen or wearable that detects incorrect writing posture or pencil grip in real time and provides child-friendly tactile feedback.",
-     "components": ["ESP32-C3 SuperMini RISC-V Dev Board (Qty: 1)", "Square/Round Force Sensing Resistor (FSR402) (Qty: 2)", "MPU-6050 6-Axis Motion Sensor Module (Qty: 1)", "Miniature 3V Coin Vibration Motor (Qty: 1)", "RC522 RFID Module (Qty: 1)", "TP4056 LiPo Charger IC Board + 3.7V 300mAh LiPo Cell (Qty: 1)", "5V 1A SMPS Charging Dock Power Supply (Qty: 1)", "2N2222 NPN Transistor IC (Qty: 1)", "Mini 170 Breadboard, 10kΩ Resistors, 1N4148 Diode, Flexible Wire (Qty: 1)"]},
+     "components": ["ESP32-C3 SuperMini RISC-V Dev Board", "FSR402 Force Sensing Resistors", "MPU-6050 6-Axis Motion Sensor", "Miniature 3V Coin Vibration Motor", "TP4056 LiPo Charger"]},
     {"id": 30, "domain": "Education & Academic Learning", "title": "Visual Pronunciation Learning Device", "category": "HARDWARE",
      "desc": "Develop a standalone device that uses microphone input and a small display to provide visual mouth-shape feedback to improve pronunciation.",
-     "components": ["ESP32-S3 DevKit (DSP Audio Frequency Classifier) (Qty: 1)", "MAX9814 Electret Microphone with Auto Gain Control (Qty: 1)", "1.8-inch SPI ST7735 Full-Color TFT Display Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "5V 2A Low-Noise SMPS Power Adapter (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "830-Tie Point Breadboard, Audio Filter Capacitors, 10kΩ Resistors, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit (DSP Classifier)", "MAX9814 Electret Microphone with AGC", "1.8-inch SPI ST7735 Full-Color TFT Display Module", "5V 2A Low-Noise SMPS", "Audio Filter Capacitors"]},
     {"id": 31, "domain": "Education & Academic Learning", "title": "AI-Driven Academic Integrity Detector", "category": "SOFTWARE",
      "desc": "Develop a natural language processing software tool that analyzes student submissions to differentiate human writing, plagiarized text, and AI text.",
      "components": []},
@@ -262,34 +263,34 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 05: Renewable Energy & Power Systems
     {"id": 32, "domain": "Renewable Energy & Power Systems", "title": "Solar Energy & Battery Management", "category": "HARDWARE",
      "desc": "Develop an energy-management controller that monitors solar generation and load demand, intelligently scheduling battery cycles.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "6V 3W Mini Solar Panel (Qty: 1)", "ACS712 30A Current Sensor Modules (Qty: 2)", "Voltage Detection Divider Sensor Modules (0-25V) (Qty: 2)", "IRF3205 N-MOSFET High Current Switch Modules (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 10A Industrial Metal SMPS Unit (Qty: 1)", "LM2596S Step-Down Converter Module (Qty: 1)", "IR2104 Half-Bridge Gate Driver IC (Qty: 2)", "830 Breadboard, Power Terminals, 1000µF Filter Caps, Shunts, 14AWG Wire (Qty: 1)"]},
+     "components": ["ESP32 DevKit", "6V 3W Mini Solar Panel", "ACS712 30A Current Sensors", "IRF3205 N-MOSFET Switches", "IR2104 Gate Driver IC", "12V 10A Industrial SMPS"]},
     {"id": 33, "domain": "Renewable Energy & Power Systems", "title": "Power Quality & Harmonic Management", "category": "HARDWARE",
      "desc": "Develop a real-time power-quality monitoring system detecting harmonic distortions and evaluating the impact of active compensation.",
-     "components": ["ESP32-WROOM-32 (Fast FFT Processing) (Qty: 1)", "ZMPT101B Active Single-Phase AC Voltage Transformer (Qty: 1)", "SCT-013-000 100A Non-Invasive AC Current Clamp (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 2A SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Buck Module (Qty: 1)", "LM358 Dual Op-Amp Signal Clamping IC (Qty: 2)", "AC/DC Non-Linear Load Simulator (Qty: 1)", "830 Breadboard, 10kΩ Bias Resistors, 10µF Tantalum Caps, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board (Fast FFT)", "ZMPT101B Active AC Voltage Transformer", "SCT-013-000 100A AC Current Clamp", "AC/DC Non-Linear Load Simulator", "LM358 Dual Op-Amps"]},
     {"id": 34, "domain": "Renewable Energy & Power Systems", "title": "Solar Microgrid & Black-Start", "category": "HARDWARE",
      "desc": "Develop a black-start controller that safely restores a renewable-energy microgrid after a complete blackout by sequencing loads.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "6V 3W Mini Solar Panel (Qty: 1)", "ZMPT101B AC Voltage Sensor Module (Qty: 1)", "ACS712 20A Hall Current Sensor Modules (Qty: 2)", "4-Channel 5V Relay Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A 60W Industrial SMPS Power Supply (Qty: 1)", "LM2596S DC-DC Buck Module (Qty: 1)", "ULN2803A Darlington Transistor Array IC (Qty: 1)", "PC817 Optocoupler IC (Qty: 4)", "830 Breadboard, 1N4007 Diodes, AC Snubber Caps, Industrial Terminals (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "6V 3W Mini Solar Panel", "ZMPT101B AC Voltage Sensor", "4-Channel 5V Relay Module", "12V 5A 60W SMPS", "ULN2803A Darlington Transistor Array IC"]},
     {"id": 35, "domain": "Renewable Energy & Power Systems", "title": "Electric Vehicles & Vehicle-to-Grid (V2G) Tech", "category": "HARDWARE",
      "desc": "Develop a smart V2G controller that coordinates EV power feed back into the grid based on peak demand while maintaining minimum battery availability.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ACS712 30A Bidirectional Current Sensor (Qty: 2)", "MCP2515 CAN Bus Controller SPI Module + TJA1050 IC (Qty: 1)", "RC522 13.56MHz RFID Reader (Qty: 1)", "12V 10A 120W SMPS Industrial Unit (Qty: 1)", "IRF3205 N-Channel MOSFET Power Switch Modules (Qty: 2)", "LM393 Dual Voltage Comparator IC (Qty: 1)", "LM2596S DC-DC Step Down Buck Module (Qty: 1)", "830 Breadboard, Power Terminals, 1000µF Filter Caps, Shunts, 14AWG Wire (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "ACS712 30A Bidirectional Current Sensors", "MCP2515 CAN Bus Controller SPI Module", "12V 10A 120W SMPS", "IRF3205 Power Switch Modules"]},
     {"id": 36, "domain": "Renewable Energy & Power Systems", "title": "Urban Renewable Energy", "category": "HARDWARE",
      "desc": "Develop a small-scale energy harvesting system capturing low-level wind or footfall kinetic energy and converting it into electrical storage.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "Piezoelectric Vibration Transducer Discs (Pack of 5) (Qty: 1)", "Mini 3-Phase AC Wind Dynamo Generator Motor (Qty: 1)", "2.7V 10F Supercapacitor (Qty: 2)", "LTC3588 Energy Harvesting Power Supply IC Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "5V 2A SMPS Power Supply (Qty: 1)", "1N5819 Schottky Diode Bridge Rectifier IC Array (Qty: 4)", "400 Breadboard, Zener Diodes, Jumpers, Storage Caps (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "Piezoelectric Vibration Transducers", "Mini 3-Phase AC Wind Dynamo Generator", "LTC3588 Energy Harvesting IC", "2.7V 10F Supercapacitors"]},
     {"id": 37, "domain": "Renewable Energy & Power Systems", "title": "Railway Energy Harvesting", "category": "HARDWARE",
      "desc": "Develop a vibration-energy harvesting system capturing mechanical track vibrations from train transit for self-powered track monitors.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "Piezoelectric Ceramic Energy Harvester Module (Qty: 1)", "INA219 I2C Micro-Power Monitoring Module (Qty: 1)", "SW-420 High Sensitivity Vibration Sensor Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 2A Enclosed SMPS Unit (Qty: 1)", "LM2596 DC-DC Buck Module (Qty: 1)", "DB107 Full Wave Diode Bridge Rectifier IC (Qty: 1)", "830 Breadboard, Supercapacitors (5V), 10k Resistors, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "Piezoelectric Ceramic Energy Harvester", "INA219 I2C Micro-Power Monitor", "SW-420 High Sensitivity Vibration Sensor", "Supercapacitors (5V)"]},
     {"id": 38, "domain": "Renewable Energy & Power Systems", "title": "Community Microgrid & Energy Sharing", "category": "HARDWARE",
      "desc": "Develop an intelligent microgrid controller that manages distributed renewable assets and balances islanded microgrid clusters.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "PZEM-004T Multi-Function AC Power Meter (Qty: 1)", "2-Channel 5V Optocoupled Relay Module (30A) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A 60W SMPS Power Supply (Qty: 1)", "16x2 I2C Character LCD Display (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "830 Breadboard, Power Terminals, 16AWG Wiring, Snubber Caps (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "PZEM-004T Multi-Function AC Power Meter", "2-Channel 5V Optocoupled Relay Module (30A)", "12V 5A 60W SMPS", "16x2 I2C Character LCD Display"]},
     {"id": 39, "domain": "Renewable Energy & Power Systems", "title": "Wind Energy & Predictive Maintenance", "category": "HARDWARE",
      "desc": "Develop a wind-turbine condition monitoring unit tracking vibration, bearing temperature, RPM, and power output to predict failures.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ADXL345 3-Axis Digital Accelerometer (Qty: 1)", "LM393 Optical IR Speed/RPM Sensor Module (Qty: 1)", "DS18B20 Waterproof Temperature Sensor Probe (Qty: 1)", "12V DC Motor (Turbine Drive Sim) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 3A SMPS Power Supply Unit (Qty: 1)", "LM2596 DC-DC Buck Module (Qty: 1)", "74HC14 Schmitt Trigger IC (Qty: 1)", "830 Breadboard, Jumpers, 4.7k Pull-up Resistors, Status LEDs (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "ADXL345 3-Axis Accelerometer", "LM393 Optical IR Speed/RPM Sensor", "DS18B20 Waterproof Temperature Sensor", "12V DC Motor (Turbine Drive Sim)"]},
     {"id": 40, "domain": "Renewable Energy & Power Systems", "title": "Regenerative Energy Recovery", "category": "HARDWARE",
      "desc": "Develop a scaled regenerative braking system capturing energy from descending elevators and safely storing or dumping excess power.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "12V High-Torque DC Motor/Generator (Qty: 1)", "INA219 Bidirectional Voltage & Current I2C Module (Qty: 1)", "Supercapacitor Bank (5.4V 5F Series/Parallel) (Qty: 2)", "IRFB3077/IRF3205 N-MOSFET (Qty: 2)", "RC522 13.56MHz RFID Module (Qty: 1)", "12V 5A Industrial Enclosed SMPS Unit (Qty: 1)", "LM2596S DC-DC Step-Down Buck Converter Module (Qty: 1)", "TC4427/IR2104 Dual Gate Driver IC (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "1N5822 3A Schottky Flyback Diodes (Qty: 4)", "Ceramic Power Dump Resistors (10Ω 10W), 830 Breadboard, Terminals (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "12V High-Torque DC Motor/Generator", "INA219 Bidirectional Power Monitor", "Supercapacitor Bank", "IRFB3077/IRF3205 N-MOSFET Dump Controllers"]},
     {"id": 41, "domain": "Renewable Energy & Power Systems", "title": "Solar PV Predictive Maintenance & Soiling", "category": "HARDWARE",
      "desc": "Develop a low-cost PV monitoring device comparing expected irradiance with actual output to identify persistent soiling and dust buildup.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "6V 3W Mini Solar Panel (Qty: 1)", "BH1750 Digital Ambient Light / Lux Sensor (I2C) (Qty: 1)", "INA219 High-Side DC Voltage & Current Sensor Module (Qty: 1)", "DS18B20 Waterproof Digital Temperature Probe (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 2A Enclosed SMPS Power Supply (Qty: 1)", "LM2596S DC-DC Step-Down Buck Module (Qty: 1)", "LM358 Dual Op-Amp IC (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "830 Breadboard, 4.7kΩ Pull-Up Resistors, 100nF Filter Caps, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "6V 3W Mini Solar Panel", "BH1750 Digital Ambient Light / Lux Sensor", "INA219 High-Side Power Sensor", "DS18B20 Digital Temperature Probe"]},
     {"id": 42, "domain": "Renewable Energy & Power Systems", "title": "Solar Farm Yield Forecasting", "category": "SOFTWARE",
      "desc": "Develop a software system integrating meteorological satellite feeds to predict hour-ahead solar power generation for transmission grid stability.",
      "components": []},
@@ -300,22 +301,22 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 06: Aerospace, Aviation & Space Tech
     {"id": 44, "domain": "Aerospace, Aviation & Space Tech", "title": "UAV Safety & Autonomous Landing", "category": "HARDWARE",
      "desc": "Develop an autonomous emergency landing unit for drones that detects in-flight propulsion failure and guides descent to a safe landing zone.",
-     "components": ["ESP32-S3-DevKitC-1 (Qty: 1)", "MPU-6050 6-DOF IMU Accelerometer Module (Qty: 1)", "BMP280 High-Precision Barometric Pressure Sensor (Qty: 1)", "MG996R High-Torque Metal Gear Servo Motor (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A Bench SMPS (Qty: 1)", "TP4056 Module + 3.7V 800mAh High-Discharge LiPo (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "Mini 170 Breadboard, 5V Active Buzzer, High-Bright LED, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3-DevKitC-1", "MPU-6050 6-DOF IMU Accelerometer Module", "BMP280 Barometric Pressure Sensor", "MG996R High-Torque Metal Gear Servo", "TP4056 Module + 3.7V LiPo"]},
     {"id": 45, "domain": "Aerospace, Aviation & Space Tech", "title": "Autonomous Navigation & Collision Avoidance", "category": "HARDWARE",
      "desc": "Develop an obstacle detection and path replanning module enabling UAVs to detect powerlines and obstacles in real time.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "VL53L0X Time-of-Flight Laser Distance Sensors (Qty: 3)", "HC-SR04 Ultrasonic Distance Sensor Modules (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 5A Bench SMPS (Qty: 1)", "LM2596 DC-DC Step-Down Buck Converter (Qty: 1)", "74HC14 Hex Inverting Schmitt Trigger IC (Qty: 1)", "Bidirectional Logic Level Converter (Qty: 3)", "830 Breadboard, 4.7k Pullup Resistors, 10µF Caps, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "VL53L0X Time-of-Flight Laser Sensors", "HC-SR04 Ultrasonic Distance Sensors", "Bidirectional Logic Level Converters", "74HC14 Schmitt Trigger IC"]},
     {"id": 46, "domain": "Aerospace, Aviation & Space Tech", "title": "Energy-Efficient UAV Operations", "category": "HARDWARE",
      "desc": "Develop an energy-aware UAV mission computer that recalculates flight paths dynamically based on instantaneous battery discharge and headwind.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "INA219 High-Side I2C Current Sensor (Qty: 2)", "RC522 RFID Module (Qty: 1)", "12V 5A Industrial Bench SMPS Unit (Qty: 1)", "LM2596 DC-DC Buck Converter Module (Qty: 1)", "0.96-inch OLED I2C Display Module (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "830 Breadboard, Power Shunt Resistors, Filter Caps, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "INA219 High-Side I2C Current Sensors", "0.96-inch OLED I2C Display", "12V 5A Industrial Bench SMPS", "LM2596 DC-DC Buck Converter"]},
     {"id": 47, "domain": "Aerospace, Aviation & Space Tech", "title": "Aircraft Electrical Systems & Fault Management", "category": "HARDWARE",
      "desc": "Develop a multi-bus electrical fault isolation system that disconnects shorted avionics lines and reroutes power via alternate buses.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ACS712 20A Hall-Effect Current Sensor Modules (Qty: 3)", "ZMPT101B Active AC/DC Voltage Sensor Modules (Qty: 3)", "4-Channel 5V Relay Isolation Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 10A 120W SMPS Power Supply (Qty: 1)", "ULN2803A Darlington Transistor Driver IC (Qty: 1)", "LM358 Dual Op-Amp ICs (Qty: 2)", "LM2596S Buck Module (Qty: 1)", "830 Breadboard & Terminal Blocks (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "ACS712 20A Current Sensors", "ZMPT101B Active Voltage Sensors", "4-Channel 5V Relay Isolation Module", "ULN2803A Darlington Transistor Driver IC"]},
     {"id": 48, "domain": "Aerospace, Aviation & Space Tech", "title": "Autonomous Search & Rescue", "category": "HARDWARE",
      "desc": "Develop a compact drone payload that scans disaster zones, detects human presence using thermal signatures, and beacons GPS coordinates.",
-     "components": ["ESP32-S3-WROOM-1 DevKit with OV2640 Camera (Qty: 1)", "NEO-6M GPS Module with Active Antenna (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 3A SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "High-Decibel 5V Alarm Siren + Ultra-Bright 3W LED (Qty: 1)", "TIP122 Darlington Transistor IC (Qty: 1)", "Mini Solderless Breadboard, 10kΩ Resistors, 1N4007 Diodes, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit with OV2640 Camera", "NEO-6M GPS Module", "High-Decibel 5V Alarm Siren + 3W LED", "TIP122 Darlington Transistor IC", "12V 3A SMPS Power Supply"]},
     {"id": 49, "domain": "Aerospace, Aviation & Space Tech", "title": "Spacecraft Power Management", "category": "HARDWARE",
      "desc": "Develop a fault-tolerant satellite EPS module prioritizing onboard instrument power and shedding non-critical payload during eclipse periods.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "INA226 I2C High-Accuracy Power Monitor IC Boards (Qty: 3)", "IRF540N N-Channel Power MOSFET Switch Modules (Qty: 4)", "RC522 RFID Module (Qty: 1)", "12V 10A 120W SMPS Power Supply Unit (Qty: 1)", "LM2596S Adjustable Buck Converter Module (Qty: 2)", "LM358 Dual Op-Amp IC (Qty: 2)", "PC817 Optocoupler IC (Qty: 4)", "830 Breadboard, Power Terminals, 16AWG Wiring, 10kΩ Pull-downs (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "INA226 I2C Power Monitor ICs", "IRF540N N-Channel Power MOSFET Switches", "12V 10A 120W SMPS", "LM2596S Adjustable Buck Converters"]},
     {"id": 50, "domain": "Aerospace, Aviation & Space Tech", "title": "Space Safety & Debris Collision Avoidance", "category": "SOFTWARE",
      "desc": "Develop an orbital mechanics simulator that ingests TLE space debris data, predicts conjunction risks, and computes fuel-optimal thruster burns.",
      "components": []},
@@ -329,22 +330,22 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 07: Cybersecurity & Digital Forensics
     {"id": 53, "domain": "Cybersecurity & Digital Forensics", "title": "Wireless Network Security", "category": "HARDWARE",
      "desc": "Develop an edge intrusion monitor that detects 802.11 deauthentication attacks, rogue Wi-Fi clones, and maintains an offline alert log.",
-     "components": ["ESP32-WROOM-32U DevKit + 2.4GHz Antenna (Qty: 1)", "5V 2A SMPS Wall Power Adapter (Qty: 1)", "0.96-inch I2C OLED Display (SSD1306) (Qty: 1)", "5V Active Piezo Buzzer (Qty: 1)", "MicroSD Card Adapter Module (SPI) + 16GB Card (Qty: 1)", "AMS1117-3.3V LDO Voltage Regulator IC (Qty: 2)", "830-Tie Point Breadboard, 10kΩ/330Ω Resistors, Decoupling Caps, LEDs, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-WROOM-32U DevKit + Antenna", "0.96-inch I2C OLED Display", "5V Active Piezo Buzzer", "MicroSD Card Adapter Module", "AMS1117-3.3V LDO Voltage Regulators"]},
     {"id": 54, "domain": "Cybersecurity & Digital Forensics", "title": "USB Security & Hardware-Based Cybersecurity", "category": "HARDWARE",
      "desc": "Develop an inline hardware security device that screens incoming USB endpoints, dropping rogue Human Interface Device (HID) keystroke injection.",
-     "components": ["ESP32-S3-DevKitC-1 (Dual Type-C) (Qty: 1)", "MAX3421E USB Host Controller IC Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "5V 2A Low-Noise SMPS Power Adapter (Qty: 1)", "TPD4E001 ESD Protection Diode Array IC (Qty: 2)", "0.96-inch OLED Display (Qty: 1)", "5V Active Piezo Buzzer (Qty: 1)", "830 Breadboard, USB Breakouts, 22Ω Resistors, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3-DevKitC-1 (Dual Type-C)", "MAX3421E USB Host Controller IC", "TPD4E001 ESD Protection Diode Array IC", "0.96-inch OLED Display", "5V Active Piezo Buzzer"]},
     {"id": 55, "domain": "Cybersecurity & Digital Forensics", "title": "Digital Forensics & Evidence Analysis", "category": "SOFTWARE",
      "desc": "Develop an automated digital forensic tool parsing file system metadata, generating cryptographic SHA-256 hashes, and building forensic timelines.",
      "components": []},
     {"id": 56, "domain": "Cybersecurity & Digital Forensics", "title": "Forensic Evidence Protection (Write-Blocker)", "category": "HARDWARE",
      "desc": "Develop an inline forensic write-blocker intercepting SD/USB mass storage commands, allowing investigators read-only analysis without contamination.",
-     "components": ["ESP32-S3-DevKitC-1 (Dual Type-C) (Qty: 1)", "MAX3421E USB Host Controller Module (Qty: 1)", "RC522 13.56MHz RFID Module (Qty: 1)", "12V 3A SMPS Dual-Rail Power Supply (Qty: 1)", "LM2596S DC-DC Step-Down Buck Converter (Qty: 1)", "TPS2051 Current-Limited Power Distribution Switch IC (Qty: 2)", "16x2 I2C LCD Display + Active Buzzer (Qty: 1)", "830 Breadboard, Shunt Resistors, Status LEDs, Jumpers (Qty: 1)"]},
+     "components": ["ESP32-S3-DevKitC-1 (Dual Type-C)", "MAX3421E USB Host Controller Module", "TPS2051 Power Distribution Switch IC", "16x2 I2C LCD Display", "12V 3A Dual-Rail SMPS"]},
     {"id": 57, "domain": "Cybersecurity & Digital Forensics", "title": "Cyber Incident Response & Digital Evidence", "category": "SOFTWARE",
      "desc": "Develop an evidence repository establishing tamper-evident chains of custody using Merkle trees and cryptographic verification.",
      "components": []},
     {"id": 58, "domain": "Cybersecurity & Digital Forensics", "title": "Secure Digital Forensics & Field Investigation", "category": "HARDWARE",
      "desc": "Develop a portable, biometric/RFID access-controlled storage imager that logs session operators and detects physical chassis tampering.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "12V Micro Solenoid Electronic Cabinet Lock (Qty: 1)", "RC522 RFID Module (Qty: 1)", "SW-420 Vibration / Tamper Tilt Sensor Module (Qty: 1)", "12V 3A SMPS Enclosed Industrial Unit (Qty: 1)", "LM2596 DC-DC Buck Converter (Qty: 1)", "ULN2003 Driver IC (Qty: 1)", "1N4007 Flyback Diodes (Qty: 4)", "830 Breadboard, Magnetic Reed Switch, 10k Resistors, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "12V Micro Solenoid Cabinet Lock", "SW-420 Vibration/Tamper Sensor", "ULN2003 Driver IC", "12V 3A SMPS Enclosed Industrial Unit"]},
     {"id": 59, "domain": "Cybersecurity & Digital Forensics", "title": "Ransomware Behavior Isolation System", "category": "SOFTWARE",
      "desc": "Develop an endpoint security agent detecting rapid, high-entropy file modifications and autonomously isolating infected hosts from the network.",
      "components": []},
@@ -355,25 +356,25 @@ PROBLEM_STATEMENTS = [
     # DOMAIN 08: Agriculture & Aquaculture
     {"id": 61, "domain": "Agriculture & Aquaculture", "title": "Water Management & Smart Irrigation", "category": "HARDWARE",
      "desc": "Develop an autonomous irrigation controller that evaluates localized soil moisture and temperature to govern multi-valve water delivery.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "Capacitive Soil Moisture Sensor V1.2 (Corrosion-Free) (Qty: 3)", "12V DC Solenoid Water Valve (1/2 Inch N/C) (Qty: 1)", "12V Mini Submersible Water Pump (Qty: 1)", "1-Channel Optoisolated 5V Relay Module (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A 60W Industrial Metal SMPS Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "1N4007 Silicon Rectifier Diodes (Qty: 4)", "830 Breadboard, Barrier Terminals, Jumper Wires, Status LEDs, 18AWG Output Wire (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "Capacitive Soil Moisture Sensors", "12V DC Solenoid Water Valve", "12V Mini Submersible Water Pump", "1-Channel Optoisolated 5V Relay", "12V 5A SMPS"]},
     {"id": 62, "domain": "Agriculture & Aquaculture", "title": "Precision Agriculture - Crop Health Monitoring", "category": "HARDWARE",
      "desc": "Develop a drone payload using calibrated multispectral/optical sensors to survey vegetative health and identify crop blight.",
-     "components": ["ESP32-S3-WROOM-1 DevKit with OV2640 Camera (Qty: 1)", "DHT22 Digital Temperature & Humidity Sensor (Qty: 1)", "RC522 RFID Module (Qty: 1)", "MicroSD Card Module + 16GB Card (Qty: 1)", "0.96-inch I2C OLED Screen (Qty: 1)", "12V 3A SMPS Power Supply Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "AMS1117-3.3V LDO IC (Qty: 2)", "Miniature Coreless Motor & Propeller Set (Qty: 1)", "830 Breadboard, Jumper Wires, 10kΩ Pull-ups, Filter Capacitors (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit with OV2640 Camera", "DHT22 Digital Temperature & Humidity Sensor", "MicroSD Card Module", "0.96-inch OLED Screen", "Miniature Coreless Motor & Propeller (Sim)"]},
     {"id": 63, "domain": "Agriculture & Aquaculture", "title": "Energy Management & Predictive Maintenance", "category": "HARDWARE",
      "desc": "Develop an edge diagnostic monitor detecting dry running, motor cavitation, phase unbalance, and abnormal pump vibration.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "ACS712 30A Current Sensor Module (Qty: 2)", "DS18B20 Waterproof Stainless Motor Temp Probe (Qty: 1)", "SW-420 Vibration Sensor Module (Qty: 1)", "1-Channel 30A High-Current Relay Module (Qty: 1)", "12V Mini Submersible Water Pump (Simulation Load) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A Industrial SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "TIP122 Darlington Transistor IC (Qty: 1)", "830 Breadboard, Terminal Blocks, Jumper Wires, Status LEDs, High-Gauge AC Wire (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "ACS712 30A Current Sensor", "DS18B20 Waterproof Temp Probe", "SW-420 Vibration Sensor", "30A High-Current Relay", "12V Mini Submersible Pump"]},
     {"id": 64, "domain": "Agriculture & Aquaculture", "title": "Climate Resilience & Crop Protection", "category": "HARDWARE",
      "desc": "Develop a micro-climate forecasting node calculating frost points and automatically actuating protective thermal sprinklers or warm blowers.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "SHT31 High-Precision Temperature & Humidity Sensor (Qty: 1)", "BMP280 Barometric Pressure & Dew Point Sensor (Qty: 1)", "12V 2-Channel Relay Module (Qty: 1)", "12V PTC Heater & 5V Mini Pump (Sim) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A Enclosed Industrial SMPS Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler IC (Qty: 2)", "830 Breadboard, Barrier Terminals, 1N4007 Diodes, 18AWG Output Wire (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "SHT31 Precision Temp/Humidity Sensor", "BMP280 Barometric Pressure Sensor", "2-Channel Relay Module", "12V PTC Heater & 5V Mini Pump (Sim)"]},
     {"id": 65, "domain": "Agriculture & Aquaculture", "title": "Soil Health Monitoring (Edge AI)", "category": "HARDWARE",
      "desc": "Develop a field probe evaluating soil electrical conductivity (EC), pH, and moisture parameters to summarize soil viability without internet.",
-     "components": ["ESP32-S3 DevKit (TinyML Polynomial Fitting) (Qty: 1)", "Analog Soil pH Sensor Probe & Conditioning Board (Qty: 1)", "Analog Soil Electrical Conductivity (EC) Probe (Qty: 1)", "Capacitive Soil Moisture Sensor V1.2 (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 3A SMPS Power Supply Unit (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "LM358 Dual Op-Amp IC (Qty: 2)", "830 Breadboard, 0.96-inch OLED Screen, Calibration Trimpots, Bypass Caps (Qty: 1)"]},
+     "components": ["ESP32-S3 DevKit (TinyML)", "Analog Soil pH Sensor Probe", "Analog Soil EC Probe", "Capacitive Soil Moisture Sensor", "LM358 Dual Op-Amp ICs", "0.96-inch OLED"]},
     {"id": 66, "domain": "Agriculture & Aquaculture", "title": "Aquaculture & Water Quality Management", "category": "HARDWARE",
      "desc": "Develop an automated water quality system monitoring dissolved oxygen proxies, pH, and turbidity, driving aerators when parameters deteriorate.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "Analog Industrial pH Sensor Kit with BNC Interface (Qty: 1)", "DS18B20 Waterproof Stainless Water Temp Probe (Qty: 1)", "Analog Optical Turbidity Sensor Module (Qty: 1)", "4-Channel 5V Relay Module (Qty: 1)", "5V Submersible Pump & SG90 Servo (Sim) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 10A 120W Industrial SMPS Power Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "PC817 Optocoupler ICs (Qty: 4)", "830 Breadboard, Power Terminals, Waterproof Glands, 4.7kΩ Pull-ups (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "Analog Industrial pH Sensor Kit", "DS18B20 Temp Probe", "Analog Optical Turbidity Sensor", "4-Channel Relay", "5V Submersible Pump (Sim)"]},
     {"id": 67, "domain": "Agriculture & Aquaculture", "title": "Smart Greenhouse Climate & Fogging Automation", "category": "HARDWARE",
      "desc": "Develop an automated greenhouse system regulating vapor pressure deficits (VPD) through synchronized exhaust venting and ultrasonic misting.",
-     "components": ["ESP32-WROOM-32 Dev Board (Qty: 1)", "DHT22 High-Accuracy Temperature & Humidity Sensor (Qty: 1)", "BH1750 Digital Ambient Light/Lux Sensor Module (Qty: 1)", "Capacitive Soil Moisture Sensor Module (Qty: 2)", "2-Channel 5V Optocoupled Relay Module (Qty: 1)", "12V Mini Exhaust Fan & 5V Mist Maker (Sim) (Qty: 1)", "RC522 RFID Module (Qty: 1)", "12V 5A 60W Metal Industrial SMPS Supply (Qty: 1)", "LM2596 DC-DC Step-Down Buck Module (Qty: 1)", "TIP122 Darlington Transistor IC (Qty: 2)", "830 Breadboard, Terminal Blocks, 1N4007 Diodes, Jumpers (Qty: 1)"]},
+     "components": ["ESP32 Dev Board", "DHT22 Sensor", "BH1750 Ambient Light Sensor", "Capacitive Soil Moisture Sensors", "2-Channel Relay", "12V Mini Exhaust Fan & 5V Mist Maker (Sim)"]},
     {"id": 68, "domain": "Agriculture & Aquaculture", "title": "Crop Yield Prediction & Commodity Market Triage", "category": "SOFTWARE",
      "desc": "Develop a predictive analytics software pipeline fusing NDVI satellite imagery and commodity indices to suggest optimal harvest liquidation windows.",
      "components": []},
@@ -384,21 +385,20 @@ PROBLEM_STATEMENTS = [
 
 ps_titles = [f"PS #{ps['id']:02d}: {ps['title']}" for ps in PROBLEM_STATEMENTS]
 
+
 # ==============================================================================
-# VIEW 1: HOME PAGE (SIH THEME LISTING)
+# VIEW 1: HOME PAGE (LISTING WITH EXCLUSIVE ACCORDIONS)
 # ==============================================================================
 if st.session_state.page == 'home':
     st.markdown("""
     <div class="hero-banner">
-        <div class="inst-tag">Smart India Hackathon 2026 Initiative</div>
-        <div class="hero-title">WCE National Hackathon 2026</div>
-        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware Specifications, and Team Registration. Hosted by Walchand College of Engineering.</div>
+        <div class="inst-tag">Organized by Department of Electrical Engineering</div>
+        <div class="hero-title">WCE National Technical Hackathon 2026</div>
+        <div class="hero-sub">Official Portal for Problem Statements, Prototyping Hardware Specifications, and Team Registration. Hosted by Walchand College of Engineering, Sangli.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.subheader("Official Problem Statement Compendium")
-    
-    # Compendium Preview / Download
+    # Document Preview & Download
     doc_filename = "Problem_Statements_Updated.docx"
     with st.expander("👁️ Click here to Preview the Official Compendium Document", expanded=False):
         encoded_doc_name = urllib.parse.quote(doc_filename)
@@ -408,7 +408,7 @@ if st.session_state.page == 'home':
 
     if os.path.exists(doc_filename):
         with open(doc_filename, "rb") as fp:
-            st.download_button("⬇️ Download Document (.docx)", data=fp, file_name=doc_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            st.download_button("⬇️ Download Compendium (.docx)", data=fp, file_name=doc_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
     st.markdown("---")
     
@@ -433,37 +433,67 @@ if st.session_state.page == 'home':
 
     st.write(f"Showing **{len(filtered_list)}** problem statement(s):")
 
-    # Interactive Problem Statement List (SIH Table style)
+    # ==========================================
+    # CUSTOM ACCORDION (ONLY 1 OPEN AT A TIME)
+    # ==========================================
     for ps in filtered_list:
-        with st.expander(f"PS #{ps['id']:02d}: {ps['title']}"):
-            c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
-            st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b style="color:#1E3A8A;">{ps["domain"]}</b>', unsafe_allow_html=True)
-            st.markdown(f"<p style='margin-top: 15px; font-size: 1.05rem;'>{ps['desc']}</p>", unsafe_allow_html=True)
+        with st.container(border=True):
+            # Header Row: [ Title ] [ Badge ] [ Button ]
+            row_c1, row_c2, row_c3 = st.columns([5, 1.5, 2])
             
-            st.markdown("---")
-            if ps["category"] == "SOFTWARE":
-                st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
-            else:
-                st.markdown("#### 📦 Expected Hardware Components:")
-                col_c1, col_c2 = st.columns(2)
-                mid_pt = (len(ps['components']) + 1) // 2
-                with col_c1:
-                    for comp in ps['components'][:mid_pt]:
-                        st.markdown(f"🔹 {comp}")
-                with col_c2:
-                    for comp in ps['components'][mid_pt:]:
-                        st.markdown(f"🔹 {comp}")
+            with row_c1:
+                st.markdown(f"<h4 style='margin-bottom: 0px;'>PS #{ps['id']:02d}: {ps['title']}</h4>", unsafe_allow_html=True)
+            
+            with row_c2:
+                # Badge appears beside the name *before* opening
+                c_tag = "badge-hw" if ps['category'] == "HARDWARE" else "badge-sw"
+                st.markdown(f'<div style="margin-top: 5px;"><span class="{c_tag}">{ps["category"]}</span></div>', unsafe_allow_html=True)
+                
+            with row_c3:
+                # Toggle logic
+                is_active = st.session_state.active_ps == ps['id']
+                btn_lbl = "🔼 Hide Details" if is_active else "🔽 View Details"
+                if st.button(btn_lbl, key=f"tgl_{ps['id']}", use_container_width=True, type="secondary"):
+                    if is_active:
+                        st.session_state.active_ps = None
+                    else:
+                        st.session_state.active_ps = ps['id']
+                    st.rerun() # Refresh to instantly open/close the accordion
 
-            # Register Now Button placed directly underneath the components
-            st.markdown("<br>", unsafe_allow_html=True)
-            ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
-            st.button(
-                f"Register Now for PS #{ps['id']:02d}", 
-                type="primary", 
-                key=f"btn_reg_{ps['id']}", 
-                on_click=navigate_to, 
-                args=('registration', ps_formatted_title)
-            )
+            # Expanded Details Content
+            if st.session_state.active_ps == ps['id']:
+                st.markdown("<hr style='margin: 15px 0px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+                
+                # Badge also appears inside
+                st.markdown(f'<span class="{c_tag}">{ps["category"]}</span> &nbsp; <b style="color:#05234A; font-size: 1.1rem;">Domain: {ps["domain"]}</b>', unsafe_allow_html=True)
+                st.markdown(f"<p style='margin-top: 15px; font-size: 1.05rem; line-height: 1.6;'>{ps['desc']}</p>", unsafe_allow_html=True)
+                
+                # Components List inside details
+                if ps["category"] == "SOFTWARE":
+                    st.info("ℹ️ **There is no hardware or components for this problem statement.** Evaluation will be based on software architecture and performance.")
+                else:
+                    st.markdown("#### 📦 Expected Prototyping Hardware Components:")
+                    col_c1, col_c2 = st.columns(2)
+                    mid_pt = (len(ps['components']) + 1) // 2
+                    with col_c1:
+                        for comp in ps['components'][:mid_pt]:
+                            st.markdown(f"🔹 {comp}")
+                    with col_c2:
+                        for comp in ps['components'][mid_pt:]:
+                            st.markdown(f"🔹 {comp}")
+
+                # Register Now Button placed directly at the bottom
+                st.markdown("<br>", unsafe_allow_html=True)
+                ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
+                
+                st.button(
+                    f"🚀 Register Now for PS #{ps['id']:02d}", 
+                    type="primary", 
+                    key=f"btn_reg_{ps['id']}", 
+                    on_click=navigate_to, 
+                    args=('registration', ps_formatted_title)
+                )
+
 
 # ==============================================================================
 # VIEW 2: REGISTRATION & PAYMENT
@@ -619,7 +649,7 @@ elif st.session_state.page == 'registration':
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #64748B; font-size: 0.85rem; padding: 1rem 0;">
-    Walchand College of Engineering, Sangli • National Level Hackathon 2026 Portal<br>
+    Walchand College of Engineering, Sangli • Department of Electrical Engineering<br>
     Built with Python & Streamlit • Autonomous Engineering Institute
 </div>
 """, unsafe_allow_html=True)

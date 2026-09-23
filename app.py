@@ -25,15 +25,24 @@ if 'selected_ps' not in st.session_state:
     st.session_state.selected_ps = None
 if 'active_ps' not in st.session_state:
     st.session_state.active_ps = None  
+if 'ps_locked' not in st.session_state:
+    st.session_state.ps_locked = False
 
 def navigate_to(page_name, ps_title=None):
     st.session_state.page = page_name
+    if page_name == 'home':
+        # Unlock the dropdown if they go back home to choose a different PS
+        st.session_state.ps_locked = False
+        
     if ps_title:
         st.session_state.selected_ps = ps_title
+        # Lock the dropdown because they came from a specific "Register Now" button
+        st.session_state.ps_locked = True
+        
     st.session_state.active_ps = None 
 
 # ==============================================================================
-# 2. THEME STYLING (ANIMATIONS & HIDING SOURCE CODE ICONS)
+# 2. THEME STYLING (ANIMATIONS & CUSTOM COMPONENTS)
 # ==============================================================================
 st.markdown("""
 <style>
@@ -111,7 +120,26 @@ st.markdown("""
         display: inline-block; text-align: center;
     }
 
-    /* Pulsating Primary Buttons */
+    /* Download Button - Highly Visible Vibrant Blue Gradient */
+    [data-testid="stDownloadButton"] button {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%) !important;
+        border: none !important;
+        border-radius: 6px !important;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3) !important;
+        padding: 0.6rem 1.5rem !important;
+    }
+    [data-testid="stDownloadButton"] button p {
+        color: #FFFFFF !important; /* Forces text to be white */
+        font-weight: 700 !important;
+        font-size: 1.05rem !important;
+        margin: 0 !important;
+    }
+    [data-testid="stDownloadButton"] button:hover {
+        box-shadow: 0 6px 15px rgba(30, 58, 138, 0.5) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Pulsating Primary Buttons (Register Now) */
     @keyframes pulse-btn {
         0% { box-shadow: 0 4px 10px rgba(255, 153, 51, 0.4); }
         50% { box-shadow: 0 8px 20px rgba(255, 153, 51, 0.7); }
@@ -132,7 +160,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Standard Buttons */
+    /* Standard Buttons (Back Button, Accordion Toggles) */
     .stButton>button[kind="secondary"] {
         background: #F8FAFC !important;
         border: 1px solid #CBD5E1 !important;
@@ -458,7 +486,7 @@ if st.session_state.page == 'home':
                         st.session_state.active_ps = None
                     else:
                         st.session_state.active_ps = ps['id']
-                    st.rerun() # Refresh to instantly open/close the accordion
+                    st.rerun() 
 
             # Expanded Details Content
             if st.session_state.active_ps == ps['id']:
@@ -482,7 +510,7 @@ if st.session_state.page == 'home':
                         for comp in ps['components'][mid_pt:]:
                             st.markdown(f"🔹 {comp}")
 
-                # Register Now Button placed directly at the bottom
+                # Register Now Button
                 st.markdown("<br>", unsafe_allow_html=True)
                 ps_formatted_title = f"PS #{ps['id']:02d}: {ps['title']}"
                 
@@ -505,6 +533,7 @@ elif st.session_state.page == 'registration':
     st.write("Complete the details below to register your team. **All 5 team members are compulsory**.")
     st.info("💳 **Registration Fee: ₹350 per team**")
 
+    # Determine Dropdown Index
     default_ps_index = 0
     if st.session_state.selected_ps in ps_titles:
         default_ps_index = ps_titles.index(st.session_state.selected_ps)
@@ -515,7 +544,16 @@ elif st.session_state.page == 'registration':
         with col_t1:
             team_name = st.text_input("Team Name *", placeholder="e.g. Walchand Innovators")
         with col_t2:
-            assigned_ps = st.selectbox("Allocated Problem Statement *", ps_titles, index=default_ps_index)
+            # Dropdown locks automatically if user navigated via "Register Now"
+            is_ps_locked = st.session_state.get('ps_locked', False)
+            assigned_ps = st.selectbox(
+                "Allocated Problem Statement *", 
+                ps_titles, 
+                index=default_ps_index,
+                disabled=is_ps_locked
+            )
+            if is_ps_locked:
+                st.caption("🔒 *Locked based on your selection. To change, go back.*")
 
         st.markdown("---")
         st.markdown("#### 2. Core Members (All 5 Compulsory)")
